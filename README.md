@@ -1,3 +1,3 @@
-#Notes
+#Notes Taking
 
 ## Personal Notes
