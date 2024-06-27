@@ -99,11 +99,12 @@ fn main() {
 const TWO: i32 = 2; // use TWO_NUMBER capital naming
 
 fn main() {
-    let mut x = 5; // variables are immutable by default i.e they cannot be changed
+    let mut x = 5; 
+    // variables are immutable by default i.e they cannot be changed
     println!("The value of x is {x}");
     x = 6;
     println!("The value of x is {x}");
-
+	
     println!("{TWO}")
 }
 ```
@@ -115,15 +116,17 @@ fn main() {
 ```rust
 fn main() {
     let x = 5;
-
+	
     let x = x + 1; // can be redeclared new variable is created
-
+	
     {
         let x = x * 2; // this variable will shadow outer variable
-        println!("The value of x in the inner scope is: {x}"); // this will be 12
+	        println!("The value of x in the inner scope is: {x}");
+	         // this will be 12
     }
-
-    println!("The value of x is: {x}"); // this variable will shadow inner variable and will be 6
+	
+    println!("The value of x is: {x}"); 
+    // this variable will shadow inner variable and will be 6
 }
 ```
 
