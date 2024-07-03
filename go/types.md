@@ -48,7 +48,7 @@ func main() {
     // Two type of constructors
 	u1 = User{id: 1, name: "Harsh"} // named
 	u2 := User{1, "NotHarsh"} // unnamed
-     
+
 	fmt.Println(u1, u2)
 }
 ```
@@ -61,6 +61,13 @@ type Instructor struct {
 	Score     int
 }
 
+type Workshop struct {
+	// NOTE: embedding one type in another
+	// Workshop will have all the properties of course
+	Course
+	Date time.Time
+}
+
 func main() {
 	// can use new(Type)
 	harsh := data.Instructor{
@@ -69,7 +76,7 @@ func main() {
 		Score:    100,
 	}
 	harsh.FirstName = "Harsh"
-    
+
 	fmt.Println(harsh)
 }
 ```
