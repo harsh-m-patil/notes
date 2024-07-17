@@ -27,6 +27,32 @@ app.get("/contact", (req, res) => {
 });
 ```
 
+### Response Methods
+
+```js
+app.get("/json", (req, res) => {
+  res.json({ message: "JSON response" });
+});
+
+app.get("/send", (req, res) => {
+  res.send("Send response");
+});
+
+app.get("/status", (req, res) => {
+  res.status(404).send("Not Found");
+});
+
+// NOTE: http status codes
+// 200 OK
+// 201 Created
+// 204 No Content
+// 400 Bad Request
+// 401 Unauthorized
+// 403 Forbidden
+// 404 Not Found
+// 500 Internal Server Error
+```
+
 ### HTTP Methods
 
 ```js
@@ -43,8 +69,23 @@ app.post("/post", (req, res) => {
 });
 ```
 
+### Express Router
+
+```js
+const router = express.Router();
+
+router.get("/", (req, res) => {
+  res.send("Home page");
+});
+
+router.get("/about", (req, res) => {
+  res.send("About page");
+});
+```
+
 ### Middleware
 
+> [!IMPORTANT]
 > Middleware functions are functions that have access to the request object (req),
 > the response object (res),
 > and the next middleware function in the application’s request-response cycle.
@@ -63,4 +104,14 @@ dotenv.config(); // must be called before calling app
 
 // access environment variables
 const port = process.env.PORT || 8000;
+```
+
+### Database Connection
+
+```js
+const mongoose = require("mongoose");
+
+mongoose.connect(process.env.DB_URI, {}).then(() => {
+  console.log("Database connected");
+});
 ```

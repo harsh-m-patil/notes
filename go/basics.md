@@ -12,7 +12,7 @@ func main() { // main function is the entry point of the program
     fmt.Println("Hello, World!")
     *int x = 5
     fmt.Printf("Value of x is %d", x)
-
+	
     /* NOTE: format specifiers
     %d is a format specifier for integers
     %f is a format specifier for floats

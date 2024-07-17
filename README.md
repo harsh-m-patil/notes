@@ -2,5 +2,5 @@
 
 - [Java](./cheatsheets/java.md)
 - [RUST](./RUST.md)
-- [GO](./GO.md)
-- [MERN](MERN%20Stack.md)
+- [GO](./go/GO.md)
+- [MERN](./mern/MERN%20Stack.md)

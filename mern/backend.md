@@ -1,4 +1,4 @@
-# BackEnd Fundamentals
+# Back End Fundamentals
 
 ## What happens when we access a website?
 
@@ -22,8 +22,30 @@
 
 ### Rest Architecture
 
-1. Seperate API into logical resources.
+1. Separate API into logical resources.
 2. Expose structured URLs.
 3. Use standard HTTP methods.
 4. Return JSON data.
 5. Be stateless.
+
+### HTTP Methods
+
+1. **GET**: Retrieve data.
+2. **POST**: Submit data.
+3. **PUT**: Update data.
+4. **PATCH**: Partially update data.
+5. **DELETE**: Delete data.
+
+### HTTP Status Codes
+
+> [!IMPORTANT]
+> HTTP status codes:
+>
+> - 200 OK
+> - 201 Created
+> - 204 No Content
+> - 400 Bad Request
+> - 401 Unauthorized
+> - 403 Forbidden
+> - 404 Not Found
+> - 500 Internal Server Error
