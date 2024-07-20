@@ -15,9 +15,21 @@ app.listen(8000, () => {
 });
 ```
 
+### Express Generator
+
+```bash
+npm install express-generator -g
+express --view=ejs myapp
+cd myapp
+npm install
+npm start
+```
+
 ### Routing
 
 ```js
+// app.METHOD(PATH, HANDLER)
+
 app.get("/about", (req, res) => {
   res.send("About page");
 });
@@ -53,20 +65,15 @@ app.get("/status", (req, res) => {
 // 500 Internal Server Error
 ```
 
-### HTTP Methods
+### Serve Static files
 
 ```js
-app.httpMethod("/path", (req, res) => {
-  res.send("Response");
-});
+app.use(express.static("public"));
+// this is relative to the directory you run your node process
 
-app.get("/get", (req, res) => {
-  res.send("GET request");
-});
-
-app.post("/post", (req, res) => {
-  res.send("POST request");
-});
+// therefore use this
+const path = require("path");
+app.use("/static", express.static(path.join(__dirname, "public")));
 ```
 
 ### Express Router
@@ -94,6 +101,11 @@ router.get("/about", (req, res) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
+
+app.use((req, res, next) => {
+  console.log("Hello from the Middleware");
+  next();
+});
 ```
 
 ### Environment Variables
@@ -104,14 +116,4 @@ dotenv.config(); // must be called before calling app
 
 // access environment variables
 const port = process.env.PORT || 8000;
-```
-
-### Database Connection
-
-```js
-const mongoose = require("mongoose");
-
-mongoose.connect(process.env.DB_URI, {}).then(() => {
-  console.log("Database connected");
-});
 ```

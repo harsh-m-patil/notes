@@ -27,7 +27,33 @@ Images are stored in a _registry_. In the example above, the _app2_ image is use
 - _docker stop_: stops a container that is still running
 - _docker rm_: deletes a container
 
+```bash
+docker ps 
+# Lists the running containers
 
+docker ps -a
+# Lists containers that have stopped
+
+docker log <container-id>
+# Allows to have to have a look at containers output
+
+docker inspect <container-id>
+# Get a lot of info about the container
+
+docker rm <container-id>
+# Removes the container
+
+docker container prune -f
+# removes all containers -f is for confirmation
+```
+
+### More docker run
+
+```bash
+docker run alpine printenv
+# apline is the image from which we want to build our container
+# and printenv is the command we want to execute
+```
 
 
 

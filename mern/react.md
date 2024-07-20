@@ -1,23 +1,37 @@
 # React
 
-## Basics
+## Creating and nesting a component
 
-**Creating a component**
+> component a piece of ui that has its own logic and appearance
 
-```javascript
-function App() {
-  //NOTE: first letter should be capital can use this compnent as <App />
-  // must return one block of jsx(ext. of js allows to embed js,css,react comps. in html)
-    return <h1>Hello World<h1>;
+```jsx
+// Components must start with a capital letter
+function MyButton() {
+  return <button>I'm a button</button>;
+}
+
+// can't return multiple elements
+// wrap them in a div or a fragment <></>
+// NOTE: https://transform.tools/html-to-jsx
+export default function MyApp() {
+  return (
+    <div>
+      <h1>Welcome to my App</h1>
+      <MyButton />
+    </div>
+  );
 }
 ```
 
-**Can use js inside using {}**
+- Adding Styles
 
-## Props (READ ONLY)
+```jsx
+<img className="avatar" />
+```
 
-**Props are used to pass data from parent component to child component**
-
-## State (Internal Data)
-
-Can be updated by components logic
+```css
+/* In your CSS */
+.avatar {
+  border-radius: 50%;
+}
+```
