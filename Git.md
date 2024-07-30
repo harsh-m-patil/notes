@@ -15,9 +15,13 @@
 
 - **Squash** : take N commits and turn them in N - 1 to 1 commit
 
-- **Tree** :  is a dir contains a set of files or more dirs
+- **Tree** : is a dir contains a set of files or more dirs
 
 - **Blob** : is a file
 
 Git is a acyclic graph
 Each commit is a node in a graph
+
+### Commands
+
+reflog - shows where the head has been
