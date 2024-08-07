@@ -1,5 +1,6 @@
-![[security-best-practices.png]]
+## Security
 
+![security](security-best-practices.png)
 ### Rate Limiting
 
 ```js
@@ -16,7 +17,6 @@ app.use(limiter)
 // or
 app.use('/api',limiter)
 ```
-
 ### Limit body payload
 
 ```js
@@ -44,3 +44,20 @@ const helmet = require('helmet')
 app.use(helmet())
 ```
 
+### NoSQL Injection
+
+```js
+const mongoSanitize = require('express-mongo-sanitize')
+
+app.use(mongoSanitize())
+```
+
+### Parameter Pollution
+
+```js
+const hpp = require('hpp')
+
+app.use(hpp({
+	whitelist: ['duration','price'],
+}))
+```
