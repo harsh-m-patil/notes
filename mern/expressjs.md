@@ -1,5 +1,6 @@
 ## ExpressJS - Web framework for Node.js
 
+[[Security]]
 ### Basic Server
 
 ```js
@@ -116,4 +117,15 @@ dotenv.config(); // must be called before calling app
 
 // access environment variables
 const port = process.env.PORT || 8000;
+```
+
+### Logging Middleware
+
+```js
+const morgan = require('morgan')
+
+app.use(morgan('dev'))
+
+// This is the result
+// GET /api/v1/tours 401 5.905 ms - 1152
 ```
