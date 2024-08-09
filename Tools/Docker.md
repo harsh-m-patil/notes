@@ -7,13 +7,13 @@ A container is what we eventually want to run and host in Docker. You can think 
 
 From a conceptual point of view, a container runs inside the Docker host isolated from the other containers and even the host OS. It cannot see the other containers, physical storage, or get incoming connections unless you explicitly state that it can. It contains everything it needs to run: OS, packages, runtimes, files, environment variables, standard input, and output.
 
-![Image](./img/typical-docker-server.png)
+![Image](typical-docker-server.png)
 
 ## Images
 Any container that runs is created from an _image_. An image describes everything that is needed to create a container; it is a template for containers. You may create as many containers as needed from a single image.
 
 
-![Image](./img/docker-images.png)
+![Image](docker-images.png)
 
 ## Registries
 

@@ -1,6 +1,5 @@
 ## ExpressJS - Web framework for Node.js
 
-[Security](Security.md)
 ### Basic Server
 
 ```js

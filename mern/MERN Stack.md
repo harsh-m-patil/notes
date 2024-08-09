@@ -1,5 +1,5 @@
 - [Backend Basics](./backend.md)
-- [REACT](./react.md)
+- [REACT](ReactJS.md)
 - [MongoDB](./MongoDB.md)
-- [NodeJS](./nodejs.md)
+- [NodeJS](NodeJS.md)
 - [ExpressJS](./expressjs.md)

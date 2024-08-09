@@ -60,4 +60,4 @@ const hpp = require('hpp')
 app.use(hpp({
 	whitelist: ['duration','price'],
 }))
-```
+
