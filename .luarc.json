@@ -1,5 +1,3 @@
 {
-    "diagnostics.disable": [
-        "unused-function"
-    ]
+	"diagnostics.disable": ["unused-function"]
 }

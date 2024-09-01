@@ -23,7 +23,7 @@ app.use('/api',limiter)
 const express = require('express')
 
 app.use(express.json({
-	limit:10kb
+	limit: "10kb"
 }))
 ```
 ### Cross Site Scripting (XSS)

@@ -120,9 +120,20 @@ export default function MyButton() {
   const [count, setCount] = useState(0);
 
   const handleClick = function () {
+    setCount(count + 1); // new state is created
     setCount(count + 1);
+    setCount(count + 1);
+    setCount(count + 1);
+    //NOTE: this will only increament this once due to batching
+    // to overcome this use callback
   };
 
   return <button onClick={handleClick}>Clicked {count} Times</button>;
 }
 ```
+
+### React-Fiber [Github](https://github.com/acdlite/react-fiber-architecture)
+
+#### Reconciliation
+
+- the algorithm that React uses to diff the virtual DOM and the real DOM to determine what needs to be updated
