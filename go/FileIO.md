@@ -38,18 +38,18 @@ func main() {
 	content, err := fileutils.ReadTextFile(filePath)
 	if err == nil {
 		fmt.Println(content)
-		
+
 		newContent := fmt.Sprintf(
 			"Orignal: %v\nDouble Orignal: %v%v",
 			content,
 			content,
 			content,
 		)
-		
+
 		fileutils.WriteToFile(filePath, newContent)
 	} else {
 		fmt.Printf("ERROR PANIC %v", err)
 	}
-	
+
 }
 ```

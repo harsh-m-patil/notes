@@ -97,6 +97,7 @@ func (h *home) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 ```
 
 **We can use the home struct as a handler**
+
 ```go
 mux := http.NewServeMux()
 mux.Handle("/", &home{})
@@ -104,12 +105,13 @@ mux.Handle("/", &home{})
 ```
 
 > This method is a bit-confusing instead we write it as a normal function
+
 ```go
 func home(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("This is my home page"))
 }
 
-// since home is not a type(object) anymore we have to do the below 
+// since home is not a type(object) anymore we have to do the below
 // to transform it into a handler
 
 mux := http.NewServeMux()

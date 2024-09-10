@@ -3,6 +3,7 @@ $ docker run hello-world
 ```
 
 ## Containers
+
 A container is what we eventually want to run and host in Docker. You can think of it as an isolated machine, or a virtual machine if you prefer.
 
 From a conceptual point of view, a container runs inside the Docker host isolated from the other containers and even the host OS. It cannot see the other containers, physical storage, or get incoming connections unless you explicitly state that it can. It contains everything it needs to run: OS, packages, runtimes, files, environment variables, standard input, and output.
@@ -10,8 +11,8 @@ From a conceptual point of view, a container runs inside the Docker host isolate
 ![Image](typical-docker-server.png)
 
 ## Images
-Any container that runs is created from an _image_. An image describes everything that is needed to create a container; it is a template for containers. You may create as many containers as needed from a single image.
 
+Any container that runs is created from an _image_. An image describes everything that is needed to create a container; it is a template for containers. You may create as many containers as needed from a single image.
 
 ![Image](docker-images.png)
 
@@ -28,7 +29,7 @@ Images are stored in a _registry_. In the example above, the _app2_ image is use
 - _docker rm_: deletes a container
 
 ```bash
-docker ps 
+docker ps
 # Lists the running containers
 
 docker ps -a
@@ -54,6 +55,3 @@ docker run alpine printenv
 # apline is the image from which we want to build our container
 # and printenv is the command we want to execute
 ```
-
-
-

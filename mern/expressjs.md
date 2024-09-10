@@ -90,6 +90,35 @@ router.get("/about", (req, res) => {
 });
 ```
 
+### Nested Routes
+
+```js
+const router = express.Router();
+const reviewRouter = require("../routes/reviewRouter");
+const authController = require("../controllers/auth");
+const reviewController = require("../controllers/review");
+
+// 1) 1 Way of doing nested Routes
+router
+  .route("/:tourId/reviews")
+  .post(
+    authController.protect,
+    authController.restrictTo("user"),
+    reviewController.createReview,
+  );
+
+// 2) Better Way of Creating nested Routes
+
+router.use("/:tourId/reviews", reviewRouter);
+```
+
+```js
+// In Review Router
+// To get access to params of prev router
+const router = express.Router({ mergeParams: true });
+// /:tourId/reviews this will / here
+```
+
 ### Middleware
 
 > [!IMPORTANT]
@@ -121,10 +150,32 @@ const port = process.env.PORT || 8000;
 ### Logging Middleware
 
 ```js
-const morgan = require('morgan')
+const morgan = require("morgan");
 
-app.use(morgan('dev'))
+app.use(morgan("dev"));
 
 // This is the result
 // GET /api/v1/tours 401 5.905 ms - 1152
+```
+
+### Factory
+
+```js
+/**
+ * Factory Function to create a handler
+ * @param {mongoose.Model} Model
+ *  @example
+ *  exports.deleteReview = factory.deleteOne(Review);
+ */
+exports.deleteOne = (Model) =>
+  catchAsync(async (req, res, next) => {
+    const doc = await Model.findByIdAndDelete(req.params.id);
+    if (!doc) {
+      return next(new AppError("No document found with that ID", 404));
+    }
+    res.status(204).json({
+      status: "success",
+      data: null,
+    });
+  });
 ```
