@@ -54,4 +54,31 @@ docker container prune -f
 docker run alpine printenv
 # apline is the image from which we want to build our container
 # and printenv is the command we want to execute
+
+docker container prune -f # remove all stoped containers
 ```
+
+### Server Container
+
+a server container
+
+- is long-lived
+- listens for incoming network connections
+
+```bash
+docker run -d alpine ping www.docker.com
+
+# see logs since,from,until 
+
+docker run -d -p 8085:80 nginx
+
+# f1 of -p is port you want to open on host
+# f2 is to which port it should be mapped
+
+# volume: data stored on your machine not in the container
+docker run -v /your/dir:/var/lib/mysql -d mysql:5.7
+```
+
+### Registry
+
+Each container is created from an image. You provide the image name to the _docker run_ command. Docker first looks for the image locally and uses it when present. When the image is not present locally, it is downloaded from a _registry_.

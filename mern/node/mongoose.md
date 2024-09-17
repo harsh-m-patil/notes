@@ -136,6 +136,27 @@ schema.pre(/^find/, function (next) {
 });
 ```
 
+### Aggregation Pipeline
+
+The aggregation pipeline is a powerful feature in MongoDB that allows for data transformation, advanced filtering, grouping, and aggregation. It is particularly useful when you need to perform complex operations on your data.
+
+For example, you can use the aggregation pipeline to calculate statistics about a product, such as the average price, total sales, or the most popular category.
+
+Here's an example of how you can use the aggregation pipeline in MongoDB:
+
+```js
+db.products.aggregate([
+  { $match: { category: "Electronics" } }, // Filter documents by category
+  { $group: { _id: "$brand", totalSales: { $sum: "$sales" } } }, // Group by brand and calculate total sales
+  { $sort: { totalSales: -1 } }, // Sort by total sales in descending order
+  { $limit: 5 }, // Limit the result to the top 5 brands
+]);
+```
+
+In this example, we start by filtering the documents based on the category "Electronics". Then, we group the documents by the brand field and calculate the total sales for each brand using the $sum operator. Next, we sort the result by total sales in descending order and limit the result to the top 5 brands.
+
+The aggregation pipeline provides a flexible and efficient way to perform complex data operations in MongoDB. It allows you to combine multiple stages and operators to achieve the desired result.
+
 ### Virtuals
 
 ```js
@@ -167,4 +188,29 @@ userSchema.virtual("postCount", {
   foreignField: "author", // is equal to `foreignField`
   count: true, // Only get the number of docs
 });
+```
+
+### Indexing
+
+Indexing in Mongoose (and MongoDB in general) is a mechanism that improves the performance of queries. When an index is created, MongoDB builds a data structure that holds specific fields and their values, which allows it to quickly locate data without scanning the entire collection. Indexes make reading data faster but may slightly slow down write operations since the index has to be updated with each insert, update, or delete.
+
+```js
+// Create an index on the "name" field
+schema.index({ name: 1 });
+
+// Create a compound index on multiple fields
+schema.index({ name: 1, age: -1 });
+
+// Create a unique index
+schema.index({ email: 1 }, { unique: true });
+
+// Create a text index for full-text search
+schema.index({ title: "text", body: "text" });
+
+// Create a sparse index
+// Sparse Index: These are indexes that only include documents that contain the indexed field. Documents without the field are excluded from the index, which can be useful when indexing optional fields.
+schema.index({ date: 1 }, { sparse: true });
+
+// 2dsphere Index: Used for geospatial queries (e.g., finding locations within a certain distance).
+locationSchema.index({ coordinates: "2dsphere" });
 ```
