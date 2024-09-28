@@ -1,7 +1,7 @@
 # Summary
 
 - [Java](./cheatsheets/java.md)
-- [RUST](./RUST.md)
+- [Javascript](./javascript/README.md)
 - [GO](./go/GO.md)
 - [MERN](./mern/MERN%20Stack.md)
-- [Tools](Tools.md.md)
+- [Tools](./Tools/Tools.md)
