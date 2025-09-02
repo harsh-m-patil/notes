@@ -1,0 +1,183 @@
+---
+title: "CORS"
+description: "Understand CORS by building a CORS middleware in TypeScript"
+---
+
+If you've ever tried to fetch data or access a resource from a different origin, you’ve probably encountered a **CORS error**.
+
+## What is CORS?
+
+**CORS** (Cross-Origin Resource Sharing) is a security mechanism enforced by browsers. It restricts web applications running on one origin (domain + protocol + port) from interacting with resources on a different origin unless the server explicitly allows it.
+
+---
+
+## How does CORS work?
+
+By default, browsers block cross-origin requests to protect users from malicious sites. When you try to access a resource from a different origin, the **server** must include specific CORS headers in its response to tell the browser which origins are allowed.
+
+If the browser finds that the origin you're requesting **is not allowed**, it blocks access—even if the request reaches the server and the server responds.
+
+> ⚠️ **Note:** This restriction is enforced only by browsers.  
+> If you use `curl`, `Postman`, or server-side code, CORS does **not** apply—because the check happens in the **browser**, not on the server.
+
+---
+
+## The CORS Flow
+
+1. The browser adds an `Origin` header to the outgoing request.
+2. The server checks the `Origin` and, if allowed, includes an `Access-Control-Allow-Origin` header in the response.
+3. The browser compares the two.
+4. If the origin is allowed, the browser proceeds. Otherwise, it blocks access.
+
+---
+
+## What is a Preflight Request?
+
+Some requests are considered “**complex**” by the CORS specification.  
+In such cases, the browser first sends a **preflight** request using the `OPTIONS` method to ask the server for permission **before** sending the actual request.
+
+---
+
+## What Makes a Request "Complex"?
+
+According to the spec, a request is **preflighted** if:
+
+- It uses **HTTP methods** other than `GET`, `POST`, or `HEAD`.
+- It sets **custom headers** not part of the safe list:  
+  `Accept`, `Accept-Language`, `Content-Language`, `Content-Type`.
+- It uses a **Content-Type** other than:
+  - `application/x-www-form-urlencoded`
+  - `multipart/form-data`
+  - `text/plain`
+
+---
+
+## Example: Building CORS Middleware
+
+### Basic Express server
+
+```ts title="src/index.ts"
+import express from "express";
+import morgan from "morgan";
+
+const app = express();
+app.use(morgan("dev"));
+
+app.get("/", (req, res) => {
+  res.send("Hello, World!");
+});
+
+app.listen(3000, () => {
+  console.log("Server is running on http://localhost:3000");
+});
+````
+
+If you try to access this server from another origin (e.g., `http://localhost:4321`), you’ll see a **CORS error**.
+
+---
+
+### Adding `Access-Control-Allow-Origin`
+
+```ts ins={8} title="src/index.ts"
+import express from "express";
+import morgan from "morgan";
+
+const app = express();
+app.use(morgan("dev"));
+
+app.get("/", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.send("Hello, World!");
+});
+
+app.listen(3000, () => {
+  console.log("Server is running on http://localhost:3000");
+});
+```
+
+> ⚠️ **Warning**:
+> `Access-Control-Allow-Origin: *` should **not** be used in production.
+> Always whitelist specific origins.
+> Also, `Access-Control-Allow-Credentials: true` cannot be used with `*`.
+
+---
+
+### Complex Request → Preflight Fails
+
+If we make a `POST` request with `Content-Type: application/json`, the browser sends an **OPTIONS preflight request**. Since our server doesn’t handle it, the browser blocks the actual request.
+
+---
+
+### Handle Preflight with `OPTIONS`
+
+```ts ins={12-16} title="src/index.ts"
+import express from "express";
+import morgan from "morgan";
+
+const app = express();
+app.use(morgan("dev"));
+
+app.get("/", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.send("Hello, World!");
+});
+
+app.options("/", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  return res.status(204).send();
+});
+
+app.listen(3000, () => {
+  console.log("Server is running on http://localhost:3000");
+});
+```
+
+Now the browser receives the expected headers and allows the actual request.
+
+---
+
+### Allow Multiple Methods + Headers
+
+```ts title="src/index.ts"
+import express from "express";
+import morgan from "morgan";
+
+const app = express();
+app.use(morgan("dev"));
+
+app.get("/", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.send("Hello, World!");
+});
+
+app.post("/", (req, res) => {
+  res.send("Hello, World! from POST");
+});
+
+app.options("/", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  return res.status(204).send();
+});
+
+app.listen(3000, () => {
+  console.log("Server is running on http://localhost:3000");
+});
+```
+
+---
+
+## ✅ Summary
+
+* CORS is a **browser-enforced security mechanism**.
+* Preflight requests (`OPTIONS`) happen for “complex” requests.
+* You can handle CORS by setting:
+
+  * `Access-Control-Allow-Origin`
+  * `Access-Control-Allow-Headers`
+  * `Access-Control-Allow-Methods`
+
+This is essentially what libraries like `cors` or `@hono/cors` automate for you.
+

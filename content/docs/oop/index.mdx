@@ -1,0 +1,363 @@
+---
+title: OOPs
+description: Object Oriented Programming
+---
+
+## What is OOPs
+
+> Everything is a Object
+
+Object-Oriented Programming (OOP) is a programming paradigm that organizes software
+design around objects, rather than functions and logic. It's a way of
+modeling real-world entities or abstract concepts within a program.
+
+### Object
+
+- An object is a self-contained unit that encapsulates both `state` (attributes,properties) and `behavior` (methods, functions).
+- Also defined as an instance of a class.
+- Objects can represent real-world entities (like a car, person, or bank account) or abstract concepts (like a point in a 2D space).
+
+### Class
+
+- A class is a blueprint or template for creating objects.
+- It defines the `state` (attributes) and `behaviors` (methods) that the objects created from this class will have.
+- Classes provide a way to group related data and functionality together.
+- We create objects from classes using a process called instantiation.
+- Data or `variables` defined inside a class are called as `instance variables`.
+- Code that operates on this data is called as `methods`.
+
+## Pillars Of OOPs
+
+<Mermaid
+  chart="
+graph TD;
+A[Abstraction];
+D[Inheritance];
+B[Encapsulation];
+C[Polymorphism];
+E[OOPs]
+A --- E;
+B --- E;
+C --- E;
+D --- E;"
+/>
+
+### Abstraction
+
+> hide details and show only essential information
+
+- Hide complex implementation details
+- Show only essential features
+- Focuses on "what" an object does rather than "how" it does it
+
+- Achieved using
+  1. Abstract classes
+  2. Interfaces
+
+<Accordions>
+<Accordion title="Code Example" id="abstraction">
+
+<Tabs items={["Java", "C++", "Typescript"]}>
+<Tab>
+```java
+abstract class Vehicle {
+    String make, model;
+    Vehicle(String make, String model) { this.make = make; this.model = model; }
+    public abstract void drive();
+    public void displayInfo() { System.out.println("Vehicle: " + make + " " + model); }
+}
+
+class Car extends Vehicle {
+    Car(String make, String model) { super(make, model); }
+    public void drive() { System.out.println("Driving " + make + " " + model); }
+}
+
+class Motorcycle extends Vehicle {
+    Motorcycle(String make, String model) { super(make, model); }
+    public void drive() { System.out.println("Riding " + make + " " + model); }
+}
+
+public class Demo {
+    public static void main(String[] args) {
+        Vehicle v1 = new Car("Toyota", "Camry"), v2 = new Motorcycle("Harley", "Davidson");
+        v1.displayInfo(); v1.drive();
+        v2.displayInfo(); v2.drive();
+    }
+}
+```
+</Tab>
+
+<Tab>
+```cpp
+#include <iostream>
+using namespace std;
+
+class Vehicle {
+protected:
+    string make, model;
+public:
+    Vehicle(string m, string mo): make(m), model(mo) {}
+    virtual void drive() = 0;
+    void displayInfo() { cout << "Vehicle: " << make << " " << model << "\n"; }
+    virtual ~Vehicle() {}
+};
+
+class Car: public Vehicle {
+public: Car(string m, string mo): Vehicle(m, mo) {}
+    void drive() override { cout << "Driving " << make << " " << model << "\n"; }
+};
+
+class Motorcycle: public Vehicle {
+public: Motorcycle(string m, string mo): Vehicle(m, mo) {}
+    void drive() override { cout << "Riding " << make << " " << model << "\n"; }
+};
+
+int main() {
+    Vehicle* v1 = new Car("Toyota","Camry");
+    Vehicle* v2 = new Motorcycle("Harley","Davidson");
+    v1->displayInfo(); v1->drive();
+    v2->displayInfo(); v2->drive();
+    delete v1; delete v2;
+}
+```
+</Tab>
+
+
+<Tab>
+```typescript
+abstract class Vehicle {
+    constructor(public make: string, public model: string) {}
+    abstract drive(): void;
+    displayInfo() { console.log(`Vehicle: ${this.make} ${this.model}`); }
+}
+
+class Car extends Vehicle {
+    drive() { console.log(`Driving ${this.make} ${this.model}`); }
+}
+
+class Motorcycle extends Vehicle {
+    drive() { console.log(`Riding ${this.make} ${this.model}`); }
+}
+
+const v1: Vehicle = new Car("Toyota", "Camry");
+const v2: Vehicle = new Motorcycle("Harley", "Davidson");
+v1.displayInfo(); v1.drive();
+v2.displayInfo(); v2.drive();
+```
+</Tab>
+</Tabs>
+</Accordion>
+</Accordions>
+
+
+### Inheritance
+> A class can inherit properties and methods from another class
+
+- One object aquires all the properties and behaviors of another (parent) object
+- Creates `parent-child` relationship between classes
+- Promotes code reusability and establishes a natural hierarchy between classes
+- Used to achieve `runtime polymorphism`
+
+<Accordions>
+<Accordion title="Code Example" id="inheritance">
+<Tabs items={["Java", "C++", "Typescript"]}>
+<Tab>
+```java
+class Vehicle {
+    String make;
+    Vehicle(String make) { this.make = make; }
+    void display() { System.out.println("Vehicle: " + make); }
+}
+
+class Car extends Vehicle {
+    String model;
+    Car(String make, String model) { super(make); this.model = model; }
+    void display() { System.out.println("Car: " + make + " " + model); }
+}
+
+public class Demo {
+    public static void main(String[] args) {
+        Vehicle v = new Vehicle("Generic");
+        Car c = new Car("Toyota","Camry");
+        v.display(); c.display();
+    }
+}
+```
+</Tab>
+<Tab>
+```cpp
+#include <iostream>
+using namespace std;
+
+class Vehicle {
+protected: string make;
+public:
+    Vehicle(string m): make(m) {}
+    virtual void display() { cout << "Vehicle: " << make << "\n"; }
+};
+
+class Car: public Vehicle {
+    string model;
+public:
+    Car(string m, string mo): Vehicle(m), model(mo) {}
+    void display() override { cout << "Car: " << make << " " << model << "\n"; }
+};
+
+int main() {
+    Vehicle v("Generic");
+    Car c("Toyota","Camry");
+    v.display(); c.display();
+}
+```
+</Tab>
+
+<Tab>
+```typescript
+class Vehicle {
+    constructor(public make: string) {}
+    display() { console.log(`Vehicle: ${this.make}`); }
+}
+
+class Car extends Vehicle {
+    constructor(make: string, public model: string) { super(make); }
+    display() { console.log(`Car: ${this.make} ${this.model}`); }
+}
+
+const v = new Vehicle("Generic");
+const c = new Car("Toyota", "Camry");
+v.display(); c.display();
+```
+</Tab>
+</Tabs>
+</Accordion>
+</Accordions>
+
+### Polymorphism
+> one task in different ways
+
+- Ability of a single function, method, or operator to operate in different ways based on the context
+- Achieved through method overloading, operator overloading, and method overriding
+- Two types
+    1. `Compile-time` (or static) polymorphism (method overloading, operator overloading)
+    2. `Runtime` (or dynamic) polymorphism (method overriding)
+
+<Accordions>
+<Accordion title="Code Example" id="polymorphism">
+<Tabs items={["Java", "C++", "Typescript"]}>
+<Tab>
+```java
+class Vehicle { void drive() { System.out.println("Generic drive"); } }
+class Car extends Vehicle { void drive() { System.out.println("Car driving"); } }
+class Motorcycle extends Vehicle { void drive() { System.out.println("Motorcycle riding"); } }
+
+public class Demo {
+    public static void main(String[] args) {
+        Vehicle v1 = new Car(), v2 = new Motorcycle();
+        v1.drive(); v2.drive(); // runtime polymorphism
+    }
+}
+```
+</Tab>
+<Tab>
+```cpp
+#include <iostream>
+using namespace std;
+
+class Vehicle { public: virtual void drive(){ cout<<"Generic drive\n"; } };
+class Car: public Vehicle { public: void drive() override { cout<<"Car driving\n"; } };
+class Motorcycle: public Vehicle { public: void drive() override { cout<<"Motorcycle riding\n"; } };
+
+int main() {
+    Vehicle* v1 = new Car(); Vehicle* v2 = new Motorcycle();
+    v1->drive(); v2->drive(); // runtime polymorphism
+    delete v1; delete v2;
+}
+```
+</Tab>
+<Tab>
+```typescript
+class Vehicle { drive() { console.log("Generic drive"); } }
+class Car extends Vehicle { drive() { console.log("Car driving"); } }
+class Motorcycle extends Vehicle { drive() { console.log("Motorcycle riding"); } }
+
+const v1: Vehicle = new Car();
+const v2: Vehicle = new Motorcycle();
+v1.drive(); v2.drive(); // runtime polymorphism
+```
+</Tab>
+</Tabs>
+</Accordion>
+</Accordions>
+
+### Encapsulation
+> wrapping data as a single unit
+
+- Binding `data` (attributes) and `methods` (functions) that operate on the data into a single unit (class)
+- Fully encapsulated class has all its data members marked as `private` for e.g `Java bean`
+
+
+<Accordions>
+<Accordion title="Code Example" id="encapsulation">
+<Tabs items={["Java", "C++", "Typescript"]}>
+<Tab>
+```java
+class Account {
+    private double balance;
+    Account(double balance) { this.balance = balance; }
+    public double getBalance() { return balance; }
+    public void deposit(double amt) { balance += amt; }
+}
+
+public class Demo {
+    public static void main(String[] args) {
+        Account acc = new Account(1000);
+        acc.deposit(500);
+        System.out.println("Balance: " + acc.getBalance());
+    }
+}
+```
+</Tab>
+<Tab>
+```cpp
+#include <iostream>
+using namespace std;
+
+class Account {
+private:
+    double balance;
+public:
+    Account(double b): balance(b) {}
+    double getBalance() { return balance; }
+    void deposit(double amt) { balance += amt; }
+};
+
+int main() {
+    Account acc(1000);
+    acc.deposit(500);
+    cout << "Balance: " << acc.getBalance() << "\n";
+}
+```
+</Tab>
+<Tab>
+```typescript
+class Account {
+    private balance: number;
+    constructor(balance: number) { this.balance = balance; }
+    getBalance() { return this.balance; }
+    deposit(amt: number) { this.balance += amt; }
+}
+
+const acc = new Account(1000);
+acc.deposit(500);
+console.log("Balance:", acc.getBalance());
+```
+</Tab>
+</Tabs>
+</Accordion>
+</Accordions>
+
+## Benifits of OOP
+
+- Faster development of software
+- Easy to maintain
+- Promotes reusability
