@@ -1,5 +1,5 @@
 ---
-title: OOPs
+title: Introduction to OOPs
 description: Object Oriented Programming
 ---
 
@@ -28,6 +28,7 @@ modeling real-world entities or abstract concepts within a program.
 
 ## Pillars Of OOPs
 
+<div className='border m-4'>
 <Mermaid
   chart="
 graph TD;
@@ -41,6 +42,10 @@ B --- E;
 C --- E;
 D --- E;"
 />
+<div className='text-center text-fd-muted-foreground'>
+Four Pillars of Object-Oriented Programming
+</div>
+</div>
 
 ### Abstraction
 
@@ -53,6 +58,7 @@ D --- E;"
 - Achieved using
   1. Abstract classes
   2. Interfaces
+
 
 <Accordions>
 <Accordion title="Code Example" id="abstraction">
@@ -157,6 +163,23 @@ v2.displayInfo(); v2.drive();
 - Creates `parent-child` relationship between classes
 - Promotes code reusability and establishes a natural hierarchy between classes
 - Used to achieve `runtime polymorphism`
+
+<div className='border m-4'>
+<Mermaid
+  chart="
+graph TD;
+A[Vehicle];
+B[Car];
+C[Motorcycle];
+A --> B
+A --> C
+"
+/>
+
+<div className='text-center text-fd-muted-foreground'>
+Diagram showing inheritance
+</div>
+</div>
 
 <Accordions>
 <Accordion title="Code Example" id="inheritance">

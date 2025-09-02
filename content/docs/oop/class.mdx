@@ -1,0 +1,411 @@
+---
+title: Class And Object
+description: Understand class and objects
+---
+
+### Different ways to create an object
+
+- Using new keyword
+- Using Class.forName() method
+- Using clone() method
+- Using object deserialization
+- Using newInstance() method
+
+### Comparison of Object Creation Methods
+
+| Method | Description | Use Case |
+| --- | --- | --- |
+| `new` keyword | The most common way to create objects. | General purpose object creation. |
+| `Class.forName().newInstance()` | Creates an object from a class name string. | When the class name is not known at compile time. |
+| `clone()` | Creates a copy of an existing object. | When you need a duplicate of an object. |
+| Deserialization | Creates an object from a serialized state. | Recreating an object from a persistent state. |
+| `newInstance()` | Creates a new instance of a class. | Used in reflection, but now deprecated. |
+
+
+### Constructors
+
+A constructor is a special method that is used to initialize an object. It is called when an object of a class is created.
+
+- **Default Constructor**: A constructor that has no parameters. If you do not define a constructor in a class, the compiler creates a default constructor for you.
+- **Parameterized Constructor**: A constructor that has parameters. It is used to provide different values to the distinct objects.
+
+<Accordions>
+<Accordion title='Constructor Example' id='constructor-example'>
+<Tabs items={['Java', 'C++', 'Typescript']}>
+<Tab>
+```java
+class Rectangle {
+    int width, height;
+
+    // Default constructor
+    Rectangle() {
+        width = 0;
+        height = 0;
+    }
+
+    // Parameterized constructor
+    Rectangle(int w, int h) {
+        width = w;
+        height = h;
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Rectangle r1 = new Rectangle(); // Calls default constructor
+        Rectangle r2 = new Rectangle(10, 20); // Calls parameterized constructor
+    }
+}
+```
+</Tab>
+<Tab>
+```cpp
+#include <iostream>
+using namespace std;
+
+class Rectangle {
+public:
+    int width, height;
+
+    // Default constructor
+    Rectangle() {
+        width = 0;
+        height = 0;
+    }
+
+    // Parameterized constructor
+    Rectangle(int w, int h) {
+        width = w;
+        height = h;
+    }
+};
+
+int main() {
+    Rectangle r1; // Calls default constructor
+    Rectangle r2(10, 20); // Calls parameterized constructor
+    return 0;
+}
+```
+</Tab>
+<Tab>
+```typescript
+class Rectangle {
+    width: number;
+    height: number;
+
+    // Constructor with default values
+    constructor(w: number = 0, h: number = 0) {
+        this.width = w;
+        this.height = h;
+    }
+}
+
+let r1 = new Rectangle(); // Uses default values
+let r2 = new Rectangle(10, 20); // Uses provided values
+```
+</Tab>
+</Tabs>
+</Accordion>
+
+<Accordion title='Creating object in java' id='java-create-object'>
+<Tabs items={['New Keyword', 'Class.forName()', 'clone()', 'Object Deserialization', 'newInstance()']}>
+<Tab>
+```java
+Rectangle obj = new Rectangle(); // Using new keyword
+
+// Can also rewrite as:
+// Step 1: Declaring reference variable of type class (Rectangle)
+Rectangle obj;
+obj = new Rectangle(); // instantiation and initialization
+```
+</Tab>
+<Tab>
+```java
+// The name of the class is known
+// The class should have a public default constructor
+Rectangle obj;
+obj = (Rectangle) Class.forName("Rectangle").newInstance(); // Deprecated in Java 9+
+```
+</Tab>
+<Tab>
+```java
+//NOTE: The clone() can be used to create a copy of an
+existing object
+Rectangle object = (Rectangle) obj.clone();
+```
+</Tab>
+<Tab>
+```java
+import java.io.*;
+
+class Student implements Serializable {
+    String name;
+
+    Student(String name) {
+        this.name = name;
+    }
+
+    void show() {
+        System.out.println("Student: " + name);
+    }
+}
+
+public class DeserializationExample {
+    public static void main(String[] args) throws Exception {
+        // Serialize object
+        Student s1 = new Student("Lee");
+        ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("student.ser"));
+        out.writeObject(s1);
+        out.close();
+
+        // Deserialize object
+        ObjectInputStream in = new ObjectInputStream(new FileInputStream("student.ser"));
+        Student s4 = (Student) in.readObject();
+        in.close();
+
+        s4.show();
+    }
+}
+```
+</Tab>
+<Tab>
+```java
+class Student {
+    String name;
+
+    Student() {
+        this.name = "Default"; // no-arg constructor required
+    }
+
+    void show() {
+        System.out.println("Student: " + name);
+    }
+}
+
+public class NewInstanceExample {
+    public static void main(String[] args) throws Exception {
+        Student s5 = Student.class.newInstance(); // Deprecated in Java 9+, works with no-arg constructor
+        s5.show();
+    }
+}
+```
+</Tab>
+</Tabs>
+</Accordion>
+</Accordions>
+
+### Object Lifecycle
+
+An object's lifecycle in OOP consists of three main phases: creation, usage, and destruction.
+
+<Mermaid
+chart="
+graph TD
+A[Creation] --> B[Usage];
+B --> C[Destruction / Garbage Collection];
+"
+/>
+
+1.  **Creation**: An object is created from a class using the `new` keyword and a constructor. Memory is allocated for the object on the heap.
+2.  **Usage**: The object is used to access its members (fields and methods) through its reference variable.
+3.  **Destruction**: When an object is no longer referenced by any part of the program, it becomes eligible for garbage collection. The garbage collector automatically reclaims the memory used by the object.
+
+---
+
+
+### Anononymous Object
+> object with no reference
+
+- Used when you need to use an object only once
+- Work can be extracted before it dies like calling a method on that object
+
+<Accordions>
+<Accordion title='Anonymous Object Example' id='anonymous-object'>
+
+<Tabs items={['Java','C++','Typescript']}>
+<Tab>
+
+```java
+class Compute {
+    void fact(int n) {
+        int f = 1;
+        for (int i = 1; i <= n; i++)
+            f = f * i;
+        System.out.println("Factorial: " + f);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+new Compute().fact(5); // Anonymous object
+```
+</Tab>
+<Tab>
+
+```cpp
+#include <iostream>
+using namespace std;
+
+class Compute {
+public:
+    void fact(int n) {
+        int f = 1;
+        for (int i = 1; i <= n; i++)
+            f = f * i;
+        cout << "Factorial: " << f << endl;
+    }
+};
+
+int main() {
+    Compute().fact(5); // Anonymous object
+    return 0;
+}
+```
+</Tab>
+
+<Tab>
+
+```typescript
+class Compute {
+    fact(n: number): void {
+        let f = 1;
+        for (let i = 1; i <= n; i++)
+            f = f * i;
+        console.log("Factorial: " + f);
+    }
+}
+
+new Compute().fact(5); // Anonymous object
+```
+</Tab>
+</Tabs>
+</Accordion>
+</Accordions>
+
+
+---
+
+## Object Reference
+> A reference variable is a variable that holds the memory address of an `object`.
+
+- Reference variable is created using the class name as the data type
+- Reference variable can be used to access the members of the `object` it refers to
+- Multiple reference variables can refer to the same `object`
+
+### Assigning Reference & Variables
+
+- We can assign value of reference variable to another reference variable
+- It stores the address of the `object` in the new reference variable
+- Both reference variables will refer to the same `object`
+- It does not
+    - create a new `object`
+    - allocate new memory
+    - copy the `object`
+
+### Copying Object
+
+#### Shallow Copy
+
+- Copies the reference of the `object`
+- Both reference variables refer to the same `object`
+- Changes made through one reference variable are reflected in the other
+
+<Accordions>
+<Accordion title='Shallow Copy Code' id='shallow-copy'>
+<Tabs items={['Java','C++','Typescript']}>
+<Tab>
+
+```java
+Rectangle rect1 = new Rectangle(10, 20); // Create an object
+Rectangle rect2; // Declare a reference variable
+rect2 = rect1; // Assign reference of rect1 to rect2 (shallow copy)
+rect2.width = 30; // Modify rect2
+System.out.println(rect1.width); // Output: 30 (reflects change in rect1)
+```
+</Tab>
+<Tab>
+
+```cpp
+Rectangle* rect1 = new Rectangle(10, 20); // Create an object
+Rectangle* rect2; // Declare a reference variable
+rect2 = rect1; // Assign reference of rect1 to rect2 (shallow copy)
+rect2->width = 30; // Modify rect2
+cout << rect1->width; // Output: 30 (reflects change in rect1)
+```
+</Tab>
+<Tab>
+
+```typescript
+let rect1 = new Rectangle(10, 20); // Create an object
+let rect2: Rectangle; // Declare a reference variable
+rect2 = rect1; // Assign reference of rect1 to rect2 (shallow copy)
+rect2.width = 30; // Modify rect2
+console.log(rect1.width); // Output: 30 (reflects change in rect1)
+```
+</Tab>
+</Tabs>
+</Accordion>
+</Accordions>
+
+#### Deep Copy
+
+- Creates a new `object` and copies the values of the original `object` to the new `object`
+- Both reference variables refer to different `objects`
+- Changes made through one reference variable do not affect the other
+
+### Best Practices for Object Copying
+
+-   **Favor Immutability**: Immutable objects are inherently safe from issues related to shallow vs. deep copying.
+-   **Use Copy Constructors**: Implement copy constructors for deep copying complex objects.
+-   **Understand Library Behavior**: Be aware of how libraries and frameworks handle object copying.
+
+---
+
+### Common Interview Questions
+
+-   **What is the difference between a class and an object?**
+    -   A class is a blueprint for creating objects. An object is an instance of a class.
+-   **What is the difference between shallow copy and deep copy?**
+    -   Shallow copy duplicates the object's reference, while deep copy creates a new object with the same content.
+-   **When should you use an anonymous object?**
+    -   When you need to use an object only once, for a single task, like calling a method.
+-   **Explain the object lifecycle.**
+    -   Creation, usage, and destruction (garbage collection).
+-   **Why is it important to override `hashCode()` when you override `equals()` in Java?**
+    -   To maintain the contract that equal objects must have equal hash codes, which is crucial for collections like `HashMap`.
+
+
+<Accordions>
+<Accordion title='Deep Copy Code' id='deep-copy'>
+<Tabs items={['Java','C++','Typescript']}>
+<Tab>
+
+```java
+Rectangle rect1 = new Rectangle(10, 20); // Create an object
+// can manually create a new object and copy values
+Rectangle rect2 = new Rectangle(rect1.width, rect1.height); // Create a new object
+rect2.width = 30; // Modify rect2
+System.out.println(rect1.width); // Output: 10 (no change in rect1)
+```
+</Tab>
+<Tab>
+
+```cpp
+Rectangle* rect1 = new Rectangle(10, 20); // Create an object
+Rectangle* rect2 = new Rectangle(rect1->width, rect1->height); // Create a new object
+rect2->width = 30; // Modify rect2
+cout << rect1->width; // Output: 10 (no change in rect1)
+```
+</Tab>
+<Tab>
+
+```typescript
+let rect1 = new Rectangle(10, 20); // Create an object
+let rect2 = new Rectangle(rect1.width, rect1.height); // Create a new object
+rect2.width = 30; // Modify rect2
+console.log(rect1.width); // Output: 10 (no change in rect1)
+```
+</Tab>
+</Tabs>
+</Accordion>
+</Accordions>
