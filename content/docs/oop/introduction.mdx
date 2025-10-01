@@ -384,3 +384,36 @@ console.log("Balance:", acc.getBalance());
 - Faster development of software
 - Easy to maintain
 - Promotes reusability
+
+## Common Interview Questions
+
+1. **What is Object-Oriented Programming (OOP)?**  
+    * Object-Oriented Programming (OOP) is a programming paradigm that organizes software design around objects, rather than functions and logic. It's a way of modeling real-world entities or abstract concepts within a program. Unlike procedural programming, which focuses on functions and procedures, OOP emphasizes objects that encapsulate both data and behavior.
+
+2. **What is the difference between a class and an object?**  
+    * A class is a blueprint or template for creating objects, defining the state (attributes) and behaviors (methods) that objects will have. An object is an instance of a class, representing a specific entity with its own data. For example, "Car" is a class, while "myCar" (a Toyota Camry) is an object.
+
+3. **What are the four pillars of OOP?**  
+   * The four pillars are:  
+      1. **Abstraction:** Hiding complex implementation details and showing only essential information.  
+      2. **Inheritance:** A class can inherit properties and methods from another class, promoting code reusability.  
+      3. **Polymorphism:** The ability of a single function or method to operate in different ways based on context.  
+      4. **Encapsulation:** Wrapping data and methods into a single unit, controlling access to data.
+
+4. **Explain Abstraction with an example.**  
+     * Abstraction hides complex implementation details and shows only essential features, focusing on "what" an object does rather than "how." It's achieved using abstract classes and interfaces. For example, a "Vehicle" abstract class defines a "drive" method, but subclasses like "Car" and "Motorcycle" implement it differently. This helps in software design by reducing complexity and improving maintainability.
+
+5. **What is Inheritance?**  
+     * Inheritance allows one class (child) to acquire properties and behaviors from another class (parent), creating a parent-child relationship. Example: A "Car" class inherits from "Vehicle" class, gaining attributes like "make" and methods like "displayInfo." Benefits include code reusability, establishing natural hierarchies, and enabling runtime polymorphism.
+
+6. **What is Polymorphism?**  
+     * Polymorphism is the ability of a single function, method, or operator to operate in different ways based on context. Types:  
+   - **Compile-time (static):** Method overloading (same method name, different parameters).  
+   - **Runtime (dynamic):** Method overriding (subclass provides specific implementation).  
+   Example: In Java, `Vehicle v = new Car(); v.drive();` calls the overridden "drive" method in "Car" class.
+
+7. **Explain Encapsulation.**  
+     Encapsulation binds data (attributes) and methods (functions) that operate on the data into a single unit (class), controlling access to data (e.g., using private modifiers). Example: An "Account" class has private "balance" and public methods like "getBalance" and "deposit." It's important for data security, preventing unauthorized access, and maintaining code integrity.
+
+8. **What are the benefits of using OOP?**  
+     Benefits include faster software development through reusability, easier maintenance due to modular structure, and better organization of code around real-world entities. OOP promotes scalability, reduces complexity, and enhances collaboration in large projects.

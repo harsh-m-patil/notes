@@ -1,6 +1,9 @@
 {
+  "title": "OOP",
+  "description": "Object-Oriented Programming Concepts",
   "pages": [
     "introduction",
-    "class"
+    "class",
+    "keywords"
   ]
 }

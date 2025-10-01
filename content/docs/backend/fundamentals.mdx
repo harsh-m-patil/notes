@@ -1,0 +1,358 @@
+---
+title: "Backend Fundamentals"
+description: "What is a Backend, how do they work and why do we need them?"
+---
+
+<Callout type="info">
+### Note
+This notes are taken from the youtube video by [Srinously](https://youtu.be/6Ss4dJD9Kzg?si=pJvEyKhwiqWhVQIb)
+</Callout>
+
+## What is a Backend?
+
+A **backend** in its traditional definition is a computer that:
+
+- Listens for HTTP, WebSocket, gRPC, or other types of requests
+- Uses open ports (like 80 for HTTP or 443 for HTTPS)
+- Is accessible over the Internet
+- Allows clients/frontends to connect, send data, or receive data
+
+It's called a **server** because it serves content:
+
+- Static files (images, JavaScript, HTML)
+- Dynamic data (JSON)
+- Accepts and processes data from clients
+
+## Request Flow: Browser to Server
+
+### Complete Journey of a Request
+
+<Mermaid
+  chart={`
+graph TB
+    A[Browser] -->|1. DNS Lookup| B[DNS Server]
+    B -->|2. Returns IP Address| C[AWS EC2 Instance]
+    C -->|3. Through Firewall| D[Security Group]
+    D -->|4. Allowed Ports| E[Reverse Proxy - Nginx]
+    E -->|5. Forward to| F[Node Server - localhost:3001]
+    F -->|6. Response| A
+`}
+/>
+
+### Step-by-Step Breakdown
+
+#### 1. **DNS Resolution**
+
+- Domain name (e.g., `backend-demo.xyz`) is resolved
+- DNS server has different record types:
+  - **A Records**: Point to IP addresses
+  - **CNAME Records**: Point to domain names/subdomains
+- DNS returns the IP address of the EC2 instance
+
+#### 2. **Firewall (Security Group)**
+
+- AWS native firewall controls access
+- Must allow specific ports:
+  - Port 22: SSH access for terminal
+  - Port 80: HTTP traffic
+  - Port 443: HTTPS traffic
+- Blocks unauthorized requests
+
+#### 3. **Reverse Proxy (Nginx)**
+
+- Sits in front of servers for centralized management
+- Handles redirects and configurations
+- Example configuration:
+
+  ```nginx
+  server {
+    listen 80;
+    server_name backend-demo.xyz;
+
+    location / {
+      proxy_pass http://localhost:3001;
+    }
+  }
+  ```
+
+- Redirects HTTP (port 80) to HTTPS (port 443)
+- Routes domain requests to localhost:3001
+
+#### 4. **Node Server**
+
+- Final destination: `localhost:3001`
+- Processes the request
+- Returns response (e.g., `/users` endpoint)
+
+## Why Do We Need Backends?
+
+### Real-World Example: Instagram Like
+
+<Mermaid
+  chart={`
+sequenceDiagram
+    participant U as User
+    participant A as Instagram App
+    participant S as Server
+    participant DB as Database
+    participant F as Friend
+
+    U->>A: Clicks Like Button
+    A->>S: POST /like request
+    S->>S: Identify user ID
+    S->>DB: Save like data
+    DB-->>S: Confirmation
+    S->>S: Find post owner ID
+    S->>F: Send notification
+    F->>F: Receives notification
+`}
+/>
+
+### Core Responsibility: **DATA**
+
+The backend's primary purpose revolves around data:
+
+1. **Fetching data** - Retrieve information
+2. **Receiving data** - Accept user input
+3. **Persisting data** - Store in databases
+4. **Processing data** - Business logic and transformations
+
+### Centralized State Management
+
+- Server maintains information about ALL users
+- Each client (app/browser) has personalized view
+- Server orchestrates interactions between users
+
+## Frontend vs Backend
+
+### How Frontend Works
+
+<Mermaid
+  chart={`
+graph LR
+    A[Browser Request] -->|1| B[DNS Lookup]
+    B -->|2| C[EC2 Instance]
+    C -->|3| D[Nginx :80 → :3000]
+    D -->|4| E[Next.js Server]
+    E -->|5. Returns HTML| F[Browser]
+    F -->|6. Fetches| G[JS/CSS/Images]
+    G -->|7. Executes| H[Runtime in Browser]
+
+`}
+/>
+
+### Key Differences
+
+| Aspect         | Frontend                 | Backend                     |
+| -------------- | ------------------------ | --------------------------- |
+| **Execution**  | Browser (client machine) | Server                      |
+| **Processing** | Client-side              | Server-side                 |
+| **Resources**  | Limited (sandbox)        | Full system access          |
+| **Runtime**    | Browser engines          | Node.js, Python, Java, etc. |
+
+### Frontend Limitations
+
+#### 1. **Sandboxed Environment**
+
+- Isolated from operating system
+- Limited resource access:
+- Isolated from operating system
+- Limited resource access:
+- DOM (Document Object) (supported)
+- Browser APIs (localStorage, cookies) (supported)
+- External APIs (with CORS headers) (supported)
+- File system access (not supported)
+- Native OS processes (not supported)
+- Direct database connections (not supported)
+
+#### 2. **CORS Policy**
+
+```javascript
+// Browser blocks this if no CORS headers
+fetch("https://different-domain.com/api")
+  .then((res) => res.json())
+  .catch((err) => console.error("CORS blocked!"));
+```
+
+**CORS (Cross-Origin Resource Sharing):**
+
+- Security policy preventing unauthorized API calls
+- Can only call same-origin APIs by default
+- Requires proper HTTP headers for cross-origin requests
+
+#### 3. **Security Risks**
+
+- Browser executes remote code
+- Without sandboxing:
+  - Could access user's file system
+  - Could steal sensitive data
+  - Could send data to malicious servers
+
+## Why Backend Logic Can't Be in Frontend
+
+### 1. **Security Restrictions**
+
+- Backends need file system access (logs, configs)
+- Backends need environment variables
+- Browsers block these operations
+
+### 2. **External API Limitations**
+
+- Need to call multiple external services
+- Not all APIs have proper CORS headers
+- Backend has no CORS restrictions
+
+### 3. **Database Access**
+
+<Tabs items={['Connection Pooling', 'Database Drivers']}>
+  <Tab value="Connection Pooling">
+    ```javascript
+    // Backend maintains connection pool
+    const pool = new Pool({
+      host: 'localhost',
+      database: 'mydb',
+      max: 20, // 20 persistent connections
+      idleTimeoutMillis: 30000
+    });
+
+    // Reuses existing connections
+    await pool.query('SELECT * FROM users');
+    ```
+
+    **Why it matters:**
+    - Thousands of requests per second
+    - Creating/destroying connections is expensive
+    - Database would be overwhelmed
+  </Tab>
+
+  <Tab value="Database Drivers">
+    **Backend database drivers can:**
+  - Handle socket connections (supported)
+  - Process binary data (supported)
+  - Maintain persistent connections (supported)
+  - Manage connection pooling (supported)
+  - Execute efficient queries (supported)
+
+    **Browser cannot:**
+  - Maintain persistent DB connections (not supported)
+  - Each user would need separate connection (not supported)
+  - Would overwhelm database server (not supported)
+  - No connection pooling mechanism (not supported)
+  </Tab>
+</Tabs>
+
+### 4. **Computing Power**
+
+- **Frontend devices vary:**
+
+- **Frontend devices vary:**
+
+- Smartphones (limited CPU/RAM)
+- Laptops
+- Desktops
+- Low-end devices (256MB RAM, single core)
+
+- **Backend servers:**
+  - Centralized and powerful
+  - Easily scalable (add CPU/RAM)
+  - Handle heavy business logic
+  - Consistent performance
+
+## Summary
+
+<Callout type="info">
+### Key Takeaways
+
+1. **Backend Definition**: Server listening for requests on open ports, serving content and processing data
+
+2. **Request Flow**: Browser → DNS → Firewall → Reverse Proxy → Server → Response
+
+3. **Primary Purpose**: Data management (fetch, receive, persist, process)
+
+4. **Frontend Limitations**:
+
+   - Sandboxed environment
+   - CORS restrictions
+   - No database access
+   - Variable computing power
+
+5. **Why Separate Backend**:
+   - Security and system access
+   - Database connection pooling
+   - Reliable computing resources
+   - No CORS limitations
+
+</Callout>
+
+## Visual Architecture
+
+<Mermaid
+  chart={`
+graph TB
+    subgraph Client["Client Side"]
+        Browser[Browser]
+        Mobile[Mobile App]
+    end
+
+    subgraph Internet["Internet Layer"]
+        DNS[DNS Server]
+        CDN[CDN / Static Assets]
+    end
+
+    subgraph Server["Server Side - AWS EC2"]
+        FW[Firewall/Security Group]
+        RP[Reverse Proxy - Nginx]
+        BE[Backend Server - Node.js]
+        DB[(Database)]
+        Cache[(Redis Cache)]
+    end
+
+    Browser --> DNS
+    Mobile --> DNS
+    DNS --> FW
+    FW --> RP
+    RP --> BE
+    BE --> DB
+    BE --> Cache
+    CDN --> Browser
+`}
+/>
+
+---
+
+## Interview Questions
+
+<Accordions>
+<Accordion title="What happens when you type a URL in the browser?">
+
+1. DNS lookup to resolve domain to IP
+2. TCP connection established
+3. Request passes through firewall
+4. Reverse proxy routes to appropriate server
+5. Server processes request
+6. Response sent back through same path
+7. Browser renders the response
+
+</Accordion>
+
+<Accordion title="Why can't we connect to databases directly from frontend?">
+
+1. Security: Credentials would be exposed in client code
+2. No connection pooling: Each user creates separate connections
+3. Browser limitations: Can't handle persistent socket connections
+4. Database overload: Too many individual connections
+5. No native database driver support in browsers
+
+</Accordion>
+
+<Accordion title="What is the role of a reverse proxy?">
+
+1. Centralized request routing
+2. Load balancing across servers
+3. SSL/TLS termination
+4. Caching static content
+5. Security (hide backend structure)
+6. Request filtering and rate limiting
+
+</Accordion>
+</Accordions>

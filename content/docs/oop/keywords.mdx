@@ -1,0 +1,201 @@
+---
+title: Keywords
+description: this and the static keyword
+---
+
+## The `this` Keyword
+> refers to the current instance of a class.
+
+- In Java, `this` is used to refer to the current object.
+- Usage of `this`:
+    - used to refer current class instance variable.
+    - can be used invoke current class constructor.
+    - can be used to invoke current class method (implicitly). 
+    - can be passed as an argument in the method call.
+    - can be used to return the current class instance from the method.
+- Scope of `this` is within the class.
+
+<Callout type="info">
+`this` keyword's main purpose is to eliminate the confusion between class attributes and parameters with the same name.
+</Callout>
+
+- Can be used in two ways:
+    - `this.variableName` (this dot) to refer to instance variables.
+    - `this()` (this off) to call another constructor in the same class.
+
+- `this()` 
+    - used to call one constructor from another constructor in the same class.
+    - can be used to invoke the current class constructor. (constructor chaining)
+    - allows to reuse the constructor code.
+
+#### Constructor Chaining
+
+- Constructor chaining is the process of calling one constructor from another constructor.
+- It can be done using `this()` keyword.
+
+```java
+class Person {
+    String name;
+    int age;
+    String address;
+
+    Person() {
+        // default constructor
+    }
+
+    // Constructor with two parameters
+    Person(String name, int age) {
+        this(); // calling the default constructor
+        this.name = name;
+        this.age = age; // refers to instance variable
+    }
+
+    // Constructor with three parameters
+    Person(String name, int age, String address) {
+        this(name, age); // calling the two-parameter constructor
+        this.address = address;
+    }
+
+    void displayInfo() {
+        System.out.println("Name: " + name + ", Age: " + age + ", Address: " + address);
+    }
+}
+````
+
+---
+
+### Examples of `this` keyword in different use cases
+
+<Accordions>
+  <Accordion title="Use Cases of `this` Keyword">
+    <Tabs items={['Refer current class instance variable', 'Invoke current class constructor', 'Invoke current class method', 'Pass as an argument', 'Return current class instance']}>
+<Tab>
+
+```java
+// 1. Refer current class instance variable
+class Student {
+    String name;
+
+    Student(String name) {
+        this.name = name; // distinguishing instance variable from parameter
+    }
+
+    void show() {
+        System.out.println("Student name: " + this.name);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Student s = new Student("Harsh");
+        s.show();
+    }
+}
+```
+
+</Tab>
+
+<Tab>
+
+```java
+// 2. Invoke current class constructor
+class Example {
+    int x, y;
+
+    Example() {
+        this(10, 20); // calling parameterized constructor
+        System.out.println("Default constructor called");
+    }
+
+    Example(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+}
+```
+
+</Tab>
+
+<Tab>
+
+```java
+// 3. Invoke current class method
+class Calculator {
+    void display() {
+        System.out.println("Display method called");
+    }
+
+    void execute() {
+        this.display(); // explicit call to current class method
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Calculator c = new Calculator();
+        c.execute();
+    }
+}
+```
+
+</Tab>
+
+<Tab>
+
+```java
+// 4. Pass as an argument
+class Printer {
+    void print(Student s) {
+        System.out.println("Printing student: " + s.name);
+    }
+}
+
+class Student {
+    String name;
+
+    Student(String name) {
+        this.name = name;
+    }
+
+    void display() {
+        new Printer().print(this); // passing current object
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Student s = new Student("Harsh");
+        s.display();
+    }
+}
+```
+</Tab>
+
+<Tab>
+
+```java
+// 5. Return current class instance
+class Builder {
+    String data;
+
+    Builder setData(String data) {
+        this.data = data;
+        return this; // returning current object
+    }
+
+    void show() {
+        System.out.println("Data: " + data);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Builder b = new Builder();
+        b.setData("Hello World").show(); // method chaining
+    }
+}
+```
+</Tab>
+</Tabs>
+</Accordion>
+</Accordions>
