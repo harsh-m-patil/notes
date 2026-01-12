@@ -3,7 +3,8 @@ import { RootProvider } from "fumadocs-ui/provider";
 import { IBM_Plex_Sans } from "next/font/google";
 
 const ibmFlexSans = IBM_Plex_Sans({
-  weight: ["300", "400", "500", "600", "700"]
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ['latin']
 })
 
 export default function Layout({ children }: LayoutProps<"/">) {
