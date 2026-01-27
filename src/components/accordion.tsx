@@ -1,16 +1,59 @@
 "use client";
 
-import * as Primitive from "@radix-ui/react-accordion";
-import { ChevronRight } from "lucide-react";
-import { type ComponentProps } from "react";
-import { cn } from "../../lib/cn";
+import { Check, Link as LinkIcon } from "lucide-react";
+import {
+  ComponentProps,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { cn } from "../lib/cn";
+import { useCopyButton } from "fumadocs-ui/utils/use-copy-button";
+import { buttonVariants } from "./ui/button";
+import { mergeRefs } from "../lib/merge-refs";
+import {
+  Accordion as Root,
+  AccordionContent,
+  AccordionHeader,
+  AccordionItem,
+  AccordionTrigger,
+} from "./ui/accordion";
 
-export function Accordion({
+export function Accordions({
+  type = "single",
+  ref,
   className,
+  defaultValue,
   ...props
-}: ComponentProps<typeof Primitive.Root>) {
+}: ComponentProps<typeof Root>) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const composedRef = mergeRefs(ref, rootRef);
+  const [value, setValue] = useState<string | string[]>(() =>
+    type === "single" ? (defaultValue ?? "") : (defaultValue ?? []),
+  );
+
+  useEffect(() => {
+    const id = window.location.hash.substring(1);
+    const element = rootRef.current;
+    if (!element || id.length === 0) return;
+
+    const selected = document.getElementById(id);
+    if (!selected || !element.contains(selected)) return;
+    const value = selected.getAttribute("data-accordion-value");
+
+    if (value)
+      setValue((prev) => (typeof prev === "string" ? value : [value, ...prev]));
+  }, []);
+
   return (
-    <Primitive.Root
+    // @ts-expect-error -- Multiple types
+    <Root
+      type={type}
+      ref={composedRef}
+      value={value}
+      onValueChange={setValue}
+      collapsible={type === "single" ? true : undefined}
       className={cn(
         "divide-y divide-fd-border overflow-hidden rounded-lg border bg-fd-card",
         className,
@@ -20,69 +63,56 @@ export function Accordion({
   );
 }
 
-export function AccordionItem({
-  className,
+export function Accordion({
+  title,
+  id,
+  value = String(title),
   children,
   ...props
-}: ComponentProps<typeof Primitive.Item>) {
+}: Omit<ComponentProps<typeof AccordionItem>, "value" | "title"> & {
+  title: string | ReactNode;
+  value?: string;
+}) {
   return (
-    <Primitive.Item className={cn("scroll-m-24", className)} {...props}>
-      {children}
-    </Primitive.Item>
+    <AccordionItem value={value} {...props}>
+      <AccordionHeader id={id} data-accordion-value={value}>
+        <AccordionTrigger>{title}</AccordionTrigger>
+        {id ? <CopyButton id={id} /> : null}
+      </AccordionHeader>
+      <AccordionContent>
+        <div className="px-4 pb-2 text-[0.9375rem] prose-no-margin">
+          {children}
+        </div>
+      </AccordionContent>
+    </AccordionItem>
   );
 }
 
-export function AccordionHeader({
-  className,
-  children,
-  ...props
-}: ComponentProps<typeof Primitive.Header>) {
-  return (
-    <Primitive.Header
-      className={cn(
-        "not-prose flex flex-row items-center text-fd-card-foreground font-medium has-focus-visible:bg-fd-accent",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-    </Primitive.Header>
-  );
-}
+function CopyButton({ id }: { id: string }) {
+  const [checked, onClick] = useCopyButton(() => {
+    const url = new URL(window.location.href);
+    url.hash = id;
 
-export function AccordionTrigger({
-  className,
-  children,
-  ...props
-}: ComponentProps<typeof Primitive.Trigger>) {
-  return (
-    <Primitive.Trigger
-      className={cn(
-        "group flex flex-1 items-center gap-2 px-3 py-2.5 text-start focus-visible:outline-none",
-        className,
-      )}
-      {...props}
-    >
-      <ChevronRight className="size-4 shrink-0 text-fd-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-90" />
-      {children}
-    </Primitive.Trigger>
-  );
-}
+    return navigator.clipboard.writeText(url.toString());
+  });
 
-export function AccordionContent({
-  className,
-  children,
-  ...props
-}: ComponentProps<typeof Primitive.Content>) {
   return (
-    <Primitive.Content
+    <button
+      type="button"
+      aria-label="Copy Link"
       className={cn(
-        "overflow-hidden data-[state=closed]:animate-fd-accordion-up data-[state=open]:animate-fd-accordion-down",
-        className,
+        buttonVariants({
+          color: "ghost",
+          className: "text-fd-muted-foreground me-2",
+        }),
       )}
-      {...props}
+      onClick={onClick}
     >
-      {children}
-    </Primitive.Content>
+      {checked ? (
+        <Check className="size-3.5" />
+      ) : (
+        <LinkIcon className="size-3.5" />
+      )}
+    </button>
   );
 }
