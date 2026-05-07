@@ -1,0 +1,56 @@
+---
+title: Amazon Bedrock
+description: Bedrock notes
+---
+
+## Foundational Models
+
+- Giant, pre-trained transformer models we are fine tuning for specific tasks,
+or applying to new applications
+- GPT class models (OpenAI)
+- Claude (Anthropic)
+- Dall-E
+- LLaMa
+- Deepseek
+
+> Amazon's models
+- Nova
+- Titan (embedding)
+
+## Amazon Bedrock
+
+- An API for generative AI foundational models
+    - Invoke chat, text, or image models
+    - Pre built, your own fine-tuned models or your own models
+    - Support for RAG
+    - Support for LLM Agents
+- Serverless
+- Can integrate with SageMaker Canvas
+
+## Bedrock API Endpoints
+
+- bedrock : Manage, deploy and train models
+- bedrock runtime: Perform inference against this models
+    - Converse
+    - ConverseStream
+    - InvokeModel
+    - InvokeModelWithResponseStream
+- bedrock-agent: Manage, deploy, train LLM agents and knowledge
+bases
+- bedrock-agent-runtime: Perform inference against agents and KB's
+    - InvokeAgent, Retrieve, RetrieveAndGenerate
+
+## Permissions
+
+- Must use with an IAM user (not root)
+- User must have relevant  Bedrock permissions
+    - AmazonBedrockFullAccess
+    - AmazonBedrockReadOnly
+
+## Fine Tuning
+
+- Adapt a foundational model to a specific usecase.
+- Additional training on your own data - lots of it
+    - Eliminates need to give the data every time
+    - Saves token in the long run
+
