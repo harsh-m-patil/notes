@@ -12,7 +12,6 @@ import {
   useState,
 } from "react";
 import { Loader2, MessageCircleIcon, RefreshCw, Send, X } from "lucide-react";
-import { cn } from "../lib/cn";
 import { buttonVariants } from "./ui/button";
 import Link from "fumadocs-core/link";
 import { type UIMessage, useChat, type UseChatHelpers } from "@ai-sdk/react";
@@ -21,6 +20,7 @@ import type { z } from "zod";
 import { DefaultChatTransport } from "ai";
 import { Markdown } from "./markdown";
 import { Presence } from "@radix-ui/react-presence";
+import { cn } from "@/lib/utils";
 
 const Context = createContext<{
   open: boolean;
