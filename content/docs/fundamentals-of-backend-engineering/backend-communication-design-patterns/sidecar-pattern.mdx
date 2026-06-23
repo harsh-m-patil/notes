@@ -1,0 +1,84 @@
+---
+title: Sidecar Pattern
+description: Put communication, security, and observability concerns beside the app.
+---
+
+<Callout type="info">
+A sidecar is a helper process/container deployed next to the application. The app talks to the sidecar locally; the sidecar handles the hard networking work.
+</Callout>
+
+## The problem
+
+Every protocol and cross-cutting concern adds client-library weight:
+
+- HTTP/1.1, HTTP/2, gRPC, retries, timeouts
+- TLS and certificate rotation
+- load balancing and service discovery
+- tracing, metrics, logs
+- authn/authz policies
+
+If every service owns all of this directly, every language and every team must upgrade and retest the same concerns.
+
+## Sidecar shape
+
+The app can use a thin local protocol. The sidecar/proxy owns richer network behavior.
+
+This is the core implementation model behind many service meshes such as Envoy-based meshes and Istio ([Istio traffic management](https://istio.io/latest/docs/concepts/traffic-management/), [Envoy docs](https://www.envoyproxy.io/docs/envoy/latest/intro/what_is_envoy)).
+
+<SidecarFlowLab />
+
+## Why it helps
+
+| Concern | Without sidecar | With sidecar |
+|---|---|---|
+| Protocol upgrade | Change app libraries. | Upgrade proxy/mesh config. |
+| mTLS | Implement in every app. | Sidecars terminate/manage mTLS. |
+| Retries/timeouts | Reimplemented per language. | Central policy. |
+| Tracing | App integration everywhere. | Proxy can inject/propagate metadata. |
+| Service discovery | App knows registry. | Proxy discovers/routes. |
+
+## Layer 7 matters
+
+A sidecar proxy is most useful when it understands application protocols, not just IP packets. Layer 7 awareness allows it to route by host/path/method, apply HTTP retries, collect request metrics, and enforce API-level policy.
+
+## Pros and cons
+
+| Pros | Cons |
+|---|---|
+| Language agnostic. | More moving parts. |
+| Centralized security and traffic policy. | Adds latency and resource overhead. |
+| Easier protocol upgrades. | Debugging now includes proxy behavior. |
+| Better observability by default. | Misconfigured retries can amplify incidents. |
+| Consistent service discovery. | Local development can become heavier. |
+
+## Design warnings
+
+- Always set timeouts; never let retries wait forever.
+- Retry only idempotent operations by default.
+- Watch retry amplification during partial outages.
+- Measure proxy CPU/memory, not just app CPU/memory.
+- Keep escape hatches for debugging raw app behavior.
+
+## Use a sidecar when
+
+- many services need the same network/security features
+- services are written in multiple languages
+- you need consistent mTLS, tracing, retries, or service discovery
+- operational consistency matters more than deployment simplicity
+
+Do not add a sidecar just because it is fashionable. For a small monolith, an in-process library or a simple reverse proxy may be enough.
+
+## Retrieval check
+
+<Accordions>
+<Accordion title="What problem does the sidecar pattern solve?" id="sidecar-problem">
+It moves repeated networking concerns out of each application and into a colocated helper/proxy that can be managed consistently.
+</Accordion>
+<Accordion title="Why can sidecar retries be dangerous?" id="sidecar-retry-danger">
+Retries can multiply traffic during outages and can duplicate side effects if applied to non-idempotent operations.
+</Accordion>
+</Accordions>
+
+## Primary source
+
+Read: [What is Envoy?](https://www.envoyproxy.io/docs/envoy/latest/intro/what_is_envoy) and [Istio traffic management concepts](https://istio.io/latest/docs/concepts/traffic-management/).

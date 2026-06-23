@@ -1,0 +1,122 @@
+---
+title: Synchronous vs Asynchronous
+description: Are you blocked while waiting for the result?
+---
+
+<Callout type="info">
+Synchronous vs asynchronous is about waiting. Blocking vs non-blocking is about whether the current execution thread is forced to stop.
+</Callout>
+
+## The key question
+
+> After starting work, can the caller keep doing useful work before the result is ready?
+
+If no, the call is synchronous from the caller's point of view. If yes, it is asynchronous.
+
+## Synchronous I/O
+
+The caller starts an operation and waits until it finishes.
+
+```typescript
+import fs from "node:fs";
+
+doWork();
+const content = fs.readFileSync("file.txt", "utf8");
+doMoreWork(content);
+```
+
+## Asynchronous I/O
+
+The caller starts an operation, registers interest in the result, and continues.
+
+```typescript
+import { readFile } from "node:fs/promises";
+
+async function main() {
+  doWork();
+  const promise = readFile("largefile.dat", "utf8");
+  doOtherWork();
+  const content = await promise;
+  doMoreWork(content);
+}
+```
+
+<SyncAsyncLab />
+
+## Four words people mix up
+
+| Term | Meaning |
+|---|---|
+| Synchronous | Caller waits for completion before continuing. |
+| Asynchronous | Caller can continue before completion. |
+| Blocking | Current thread cannot proceed. |
+| Non-blocking | Operation returns immediately if it cannot progress now. |
+
+They are related, but not identical. A system can expose async APIs while internally using blocking worker threads.
+
+## Backend request example
+
+<Tabs items={["Sync workload", "Async workload"]}>
+<Tab>
+
+```text
+POST /checkout
+  validate cart
+  charge card
+  write order
+  send response only after all steps finish
+```
+
+The client waits for the final answer.
+
+</Tab>
+<Tab>
+
+```text
+POST /exports
+  validate request
+  enqueue job
+  return 202 Accepted + jobId
+
+worker later:
+  generate export
+  upload file
+  mark job done
+```
+
+The client can poll or subscribe for completion.
+
+</Tab>
+</Tabs>
+
+## Async workload patterns
+
+- Queue a background job and return `jobId`.
+- Write to a log/topic and let consumers process later.
+- Use async replication, where follower state lags leader state.
+- Use async database commit modes when durability/latency tradeoffs are acceptable, such as PostgreSQL asynchronous commit ([PostgreSQL docs](https://www.postgresql.org/docs/current/wal-async-commit.html)).
+- Use OS readiness APIs such as `epoll` on Linux ([man page](https://man7.org/linux/man-pages/man7/epoll.7.html)) or newer interfaces like `io_uring` ([man page](https://man7.org/linux/man-pages/man7/io_uring.7.html)).
+
+## Pros and cons
+
+| Synchronous | Asynchronous |
+|---|---|
+| Easier mental model. | Better resource utilization. |
+| Simple error propagation. | More states: queued, running, done, failed. |
+| Good for quick operations. | Better for slow I/O and background work. |
+| Can waste time waiting. | Harder retries, ordering, observability. |
+
+## Retrieval check
+
+<Accordions>
+<Accordion title="Is synchronicity a server property or caller property?" id="sync-caller-property">
+Mostly a caller property. It describes whether the caller waits for the result before continuing.
+</Accordion>
+<Accordion title="Why do async APIs still need careful design?" id="async-design-cost">
+Because work now has lifecycle states, retries, idempotency, cancellation, visibility, and failure handling outside the original request.
+</Accordion>
+</Accordions>
+
+## Primary source
+
+Read: [Node.js event loop guide](https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick) and [Don't block the event loop](https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop).

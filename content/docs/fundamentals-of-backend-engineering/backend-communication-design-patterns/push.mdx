@@ -1,0 +1,96 @@
+---
+title: Push
+description: Server sends data as soon as it has something useful.
+---
+
+<Callout type="info">
+Push flips the timing: the client does not keep asking “anything new?” The server sends when there is something new.
+</Callout>
+
+## Core idea
+
+In push-based communication, the client first establishes a connection or subscription. After that, the server can deliver messages without a new client request for every message.
+
+WebSockets are the common browser push transport. The protocol upgrades an HTTP connection into a persistent, bidirectional channel ([RFC 6455](https://www.rfc-editor.org/rfc/rfc6455), [MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)).
+
+## Push vs polling
+
+<PushPatternExplorer />
+
+
+| Pattern | Who initiates each update? | Best for |
+|---|---|---|
+| [Short polling](./short-polling) | Client repeatedly asks. | Simple status checks. |
+| [Long polling](./long-polling) | Client asks; server waits. | Occasional near-realtime events. |
+| [SSE](./server-sent-events) | Server streams after one request. | Server-to-client event feeds. |
+| Push/WebSocket | Either side can send anytime. | Chat, multiplayer, live collaboration. |
+
+## WebSocket server example
+
+```typescript
+import http from "node:http";
+import { WebSocketServer } from "ws";
+
+const server = http.createServer();
+const wss = new WebSocketServer({ server });
+const connections = new Set();
+
+wss.on("connection", (socket) => {
+  connections.add(socket);
+
+  socket.on("message", (message) => {
+    for (const client of connections) {
+      if (client.readyState === client.OPEN) {
+        client.send(`user says: ${message}`);
+      }
+    }
+  });
+
+  socket.on("close", () => connections.delete(socket));
+});
+
+server.listen(8080);
+```
+
+## Flow control matters
+
+Push can overload clients. A fast server can send more messages than a slow client can process. Production systems need:
+
+- bounded queues
+- backpressure or drop policies
+- heartbeats/pings to detect dead connections
+- reconnect and resubscribe logic
+- authorization per connection and per topic
+
+## Pros and cons
+
+| Pros | Cons |
+|---|---|
+| Lowest latency for frequent updates. | Client usually must stay online. |
+| Bidirectional communication. | Stateful connections are harder to scale. |
+| Efficient for chat/collaboration. | Load balancers/proxies need WebSocket support. |
+| Server can avoid wasteful polling. | Backpressure and fanout become real problems. |
+
+## Use push when
+
+- users expect live interaction
+- both client and server need to send events
+- update frequency is high
+- connection state is acceptable operational complexity
+
+Use [SSE](./server-sent-events) when updates are only server-to-client. Use [pub/sub](./pub-sub) when one event must fan out across many backend consumers.
+
+## Retrieval check
+
+<Accordions>
+<Accordion title="What is the main advantage of push over polling?" id="push-main-advantage">
+Lower latency with fewer wasted requests, because the server sends only when it has something to deliver.
+</Accordion>
+<Accordion title="Why are push systems harder to scale than plain HTTP APIs?" id="push-scale-cost">
+They keep long-lived stateful connections open, so servers, load balancers, heartbeats, reconnection, and backpressure all need explicit design.
+</Accordion>
+</Accordions>
+
+## Primary source
+
+Read: [The WebSocket Protocol — RFC 6455](https://www.rfc-editor.org/rfc/rfc6455) and [The WebSocket API — MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API).

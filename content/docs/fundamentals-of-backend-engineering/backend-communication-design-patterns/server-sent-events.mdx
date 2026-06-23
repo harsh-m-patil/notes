@@ -1,0 +1,115 @@
+---
+title: Server-Sent Events
+description: One request, one very long response made of events.
+---
+
+<Callout type="info">
+Server-Sent Events, or SSE, are HTTP streaming for server-to-client updates. The browser asks once; the server keeps writing events.
+</Callout>
+
+## Core idea
+
+SSE turns one HTTP response into a stream of text events. The client uses the browser `EventSource` API, defined by the HTML standard ([WHATWG](https://html.spec.whatwg.org/multipage/server-sent-events.html#server-sent-events)) and documented by [MDN](https://developer.mozilla.org/en-US/docs/Web/API/EventSource).
+<SSEStreamBuilder />
+
+## Wire format
+
+SSE responses use `Content-Type: text/event-stream` and events are separated by a blank line.
+
+```http
+HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+
+id: 1042
+event: message
+data: {"text":"hello"}
+
+```
+
+Important fields:
+
+| Field | Meaning |
+|---|---|
+| `data:` | Event payload. Required for useful messages. |
+| `event:` | Optional event name; defaults to `message`. |
+| `id:` | Cursor used for reconnect via `Last-Event-ID`. |
+| `retry:` | Suggested reconnect delay in milliseconds. |
+
+## Browser client
+
+```typescript
+const events = new EventSource("/stream");
+
+events.onmessage = (event) => {
+  console.log("message", event.data);
+};
+
+events.addEventListener("alert", (event) => {
+  console.log("alert", event.data);
+});
+```
+
+Browsers automatically reconnect and can send `Last-Event-ID` so the server can resume from the last delivered event ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events)).
+
+## Node/Express server
+
+```typescript
+import express from "express";
+
+const app = express();
+
+app.get("/stream", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  let i = 0;
+  const timer = setInterval(() => {
+    res.write(`id: ${i}\n`);
+    res.write(`event: tick\n`);
+    res.write(`data: ${JSON.stringify({ i })}\n\n`);
+    i++;
+  }, 1000);
+
+  req.on("close", () => clearInterval(timer));
+});
+
+app.listen(8080);
+```
+
+## Pros and cons
+
+| Pros | Cons |
+|---|---|
+| Simple browser API. | Server-to-client only. |
+| Works over HTTP. | Client must stay connected. |
+| Auto-reconnect built in. | Not ideal for binary data. |
+| Great for notifications, feeds, progress. | HTTP/1.1 browser connection limits can bite. |
+
+MDN notes that non-HTTP/2 SSE can be limited by browser per-origin connection limits; HTTP/2 negotiates a larger stream count ([MDN warning](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#warning)).
+
+## Use SSE when
+
+- the server pushes updates, but the client rarely sends data back
+- you want browser-native reconnect behavior
+- events are text/JSON
+- you need simpler infrastructure than WebSockets
+
+Use [push/WebSockets](./push) when you need true bidirectional realtime communication.
+
+## Retrieval check
+
+<Accordions>
+<Accordion title="Why is SSE still request/response?" id="sse-request-response">
+The client still starts with one HTTP request. The difference is that the server leaves the response open and keeps writing events.
+</Accordion>
+<Accordion title="What does `id:` enable in an SSE stream?" id="sse-id">
+It gives the client a resume cursor. On reconnect, the browser can send the last event id so the server can replay missed events.
+</Accordion>
+</Accordions>
+
+## Primary source
+
+Read: [Using server-sent events — MDN](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events).

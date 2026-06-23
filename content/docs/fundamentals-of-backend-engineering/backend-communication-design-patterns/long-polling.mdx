@@ -1,0 +1,91 @@
+---
+title: Long Polling
+description: Ask once; server replies only when something changes or timeout happens.
+---
+
+<Callout type="info">
+Long polling is still request/response, but the server intentionally delays the response until it has useful data.
+</Callout>
+
+## Core idea
+
+In [short polling](./short-polling), the client asks repeatedly. In long polling, the client asks once and the server holds the request open.
+
+<LongPollingTimeline />
+
+## The algorithm
+
+1. Client sends a request asking for updates.
+2. Server does **not** respond immediately if there is nothing new.
+3. Server waits until:
+   - new data arrives, or
+   - a timeout is reached.
+4. Server responds.
+5. Client immediately sends the next long-poll request.
+
+```http
+GET /events?after=event_1042
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+[{"id":"event_1043","type":"message.created"}]
+```
+
+## Why it is less chatty
+
+Short polling checks on a timer, even if there is no event. Long polling waits server-side, so most responses carry either real data or an intentional timeout.
+
+| Pattern | Empty responses | Latency | Server state |
+|---|---:|---:|---:|
+| Short polling | Many | Up to poll interval | Low |
+| Long polling | Fewer | Low after event arrives | Higher |
+
+## Timeouts are not optional
+
+Long polls should have a timeout because networks, proxies, and load balancers may kill idle connections. HTTP clients and servers commonly expose timeout controls, and intermediaries can also enforce their own limits.
+
+A safe response on timeout:
+
+```http
+HTTP/1.1 204 No Content
+```
+
+Then the client opens another long poll.
+
+## Pros and cons
+
+| Pros | Cons |
+|---|---|
+| Fewer empty requests than short polling. | Server holds many open requests. |
+| Works over plain HTTP. | Timeouts/reconnect logic required. |
+| Good fallback when WebSockets are unavailable. | Not as natural as streaming for frequent events. |
+| Client can reconnect with cursor/offset. | Load balancers need correct timeout settings. |
+
+## Real-world shape
+
+Kafka consumers use a related idea: a fetch request can wait until enough data is available or a maximum wait time expires. See Kafka consumer fetch settings like `fetch.max.wait.ms` in the [Apache Kafka consumer config docs](https://kafka.apache.org/documentation/#consumerconfigs_fetch.max.wait.ms).
+
+## Use long polling when
+
+- updates are occasional, not continuous
+- you need near-real-time behavior over HTTP
+- WebSockets/SSE are blocked or too complex
+- clients can reconnect with a cursor like `since`, `offset`, or `lastEventId`
+
+For one continuously streaming HTTP response, use [server-sent events](./server-sent-events). For bidirectional realtime, use [push](./push).
+
+## Retrieval check
+
+<Accordions>
+<Accordion title="What makes long polling different from short polling?" id="long-vs-short">
+The server delays the response until data is available or a timeout happens. Short polling responds immediately and makes the client ask again later.
+</Accordion>
+<Accordion title="Why should long polling use cursors or offsets?" id="long-polling-cursors">
+So the client can reconnect and ask for events after the last event it already processed, avoiding missed or duplicated updates.
+</Accordion>
+</Accordions>
+
+## Primary source
+
+Read: [Kafka consumer fetch wait configuration](https://kafka.apache.org/documentation/#consumerconfigs_fetch.max.wait.ms) for a production-grade example of delayed fetch behavior.

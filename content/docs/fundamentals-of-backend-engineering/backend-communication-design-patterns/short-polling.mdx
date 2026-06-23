@@ -1,0 +1,94 @@
+---
+title: Short Polling
+description: Ask again and again until the answer is ready.
+---
+
+<Callout type="info">
+Short polling keeps request/response simple, but pays for simplicity with extra requests.
+</Callout>
+
+## When request/response is not enough
+
+A plain request/response can be awkward when:
+
+- a job takes a long time, like video processing or large exports
+- the backend may have a future event, like a notification
+- the client can disconnect and return later
+
+Short polling solves this by separating **start work** from **check work**.
+
+<ShortPollingDiagram />
+
+HTTP `202 Accepted` is commonly used when a request has been accepted but not completed yet ([MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/202), [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110#name-202-accepted)).
+
+## The algorithm
+
+1. Client sends `POST /jobs`.
+2. Server validates input, creates a job, returns `jobId`.
+3. Client waits a fixed interval, for example 2 seconds.
+4. Client calls `GET /jobs/{jobId}`.
+5. Server returns `pending`, `done`, or `failed`.
+6. Client repeats until terminal state.
+
+```http
+POST /video-exports
+
+HTTP/1.1 202 Accepted
+Location: /video-exports/job_123
+Retry-After: 5
+```
+
+`Retry-After` can tell clients when to check again ([MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After)).
+
+<ShortPollingCalculator />
+
+## Pros and cons
+
+| Pros | Cons |
+|---|---|
+| Very simple to build and debug. | Too chatty at high scale. |
+| Works over normal HTTP. | Many polls return no new information. |
+| Client can disconnect safely. | Adds latency up to the polling interval. |
+| Easy through proxies and firewalls. | Can overload server during traffic spikes. |
+
+## Back-of-the-envelope cost
+
+If `50,000` clients poll every `2` seconds:
+
+```text
+50,000 / 2 = 25,000 requests per second
+```
+
+If most responses say `pending`, the backend is spending real CPU/network on mostly empty answers.
+
+## Make it safer
+
+- Use exponential backoff for slow jobs.
+- Add jitter so clients do not poll at exactly the same time.
+- Return `Retry-After` when possible.
+- Stop polling after a timeout.
+- Cache terminal job results for clients that return later.
+
+## Use short polling when
+
+- updates are not truly real-time
+- clients are light or unreliable
+- infrastructure only supports simple HTTP
+- implementation simplicity matters more than efficiency
+
+For fewer empty responses, use [long polling](./long-polling). For continuous server updates, use [server-sent events](./server-sent-events) or [push](./push).
+
+## Retrieval check
+
+<Accordions>
+<Accordion title="Why does short polling waste backend resources?" id="short-polling-waste">
+Because clients repeatedly send requests even when nothing has changed, so many responses contain only `pending` or no new data.
+</Accordion>
+<Accordion title="What two tricks reduce thundering-herd polling?" id="short-polling-herd">
+Backoff and jitter. Backoff increases the interval; jitter randomizes timing so clients do not synchronize.
+</Accordion>
+</Accordions>
+
+## Primary source
+
+Read: [HTTP 202 Accepted](https://www.rfc-editor.org/rfc/rfc9110#name-202-accepted) and [Retry-After](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After).

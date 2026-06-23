@@ -1,0 +1,112 @@
+---
+title: Multiplexing vs Demultiplexing
+description: Many logical streams over fewer physical channels, then routed back correctly.
+---
+
+## Core definitions
+
+> **Multiplexing** combines multiple logical streams onto one shared channel.
+
+> **Demultiplexing** separates that shared channel back into the correct logical streams.
+
+<MuxTransportLab />
+
+## Why it matters
+
+Every connection has costs:
+
+- TCP handshake latency
+- TLS negotiation latency
+- congestion-control slow start
+- file descriptors, buffers, memory
+- load balancer and kernel bookkeeping
+
+Multiplexing amortizes those costs: one connection can carry many independent logical streams.
+
+## HTTP/1.1 problem
+
+HTTP/1.1 traditionally suffers from head-of-line blocking at the request level: one slow response can delay later responses on the same connection. Browsers worked around this by opening multiple parallel connections per origin. MDN documents common per-origin connection limits and why this matters for streaming APIs like SSE ([MDN SSE warning](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#warning)).
+
+## HTTP/2: streams over one TCP connection
+
+HTTP/2 splits messages into frames and labels frames with stream IDs. Multiple streams can share one TCP connection ([RFC 9113](https://www.rfc-editor.org/rfc/rfc9113)).
+
+```text
+TCP connection
+├── stream 1: GET /index.html
+├── stream 3: GET /style.css
+├── stream 5: GET /app.js
+└── stream 7: POST /api/data
+```
+
+Demultiplexing happens by reading the stream ID on each frame and routing it to the right request/response handler.
+
+### Remaining problem: TCP head-of-line blocking
+
+HTTP/2 removes head-of-line blocking at the HTTP layer, but TCP is still one ordered byte stream. If one TCP packet is lost, later bytes for every HTTP/2 stream wait until retransmission.
+
+## QUIC / HTTP/3: streams over UDP
+
+QUIC is a transport protocol over UDP with built-in encryption, reliability, congestion control, and independent streams ([RFC 9000](https://www.rfc-editor.org/rfc/rfc9000)). HTTP/3 maps HTTP onto QUIC ([RFC 9114](https://www.rfc-editor.org/rfc/rfc9114)).
+
+```text
+QUIC connection over UDP
+├── stream 1: lost packet, only stream 1 waits
+├── stream 2: continues flowing
+└── stream 3: continues flowing
+```
+
+Because streams are independently delivered, packet loss in one stream does not block unrelated streams.
+
+## Connection pools
+
+A connection pool reuses a fixed set of connections instead of creating a new one per request.
+
+| Connection per request | Connection pool |
+|---|---|
+| High handshake overhead. | Reuses existing connections. |
+| Harder on DB/server. | Caps resource usage. |
+| Simple conceptually. | Needs pool sizing and timeouts. |
+
+Typical settings:
+
+- `min_connections`: keep warm even when idle
+- `max_connections`: cap load on the server
+- `connection_timeout`: wait time for a free connection
+- `idle_timeout`: close unused connections
+
+## MPTCP: one logical TCP connection over multiple paths
+
+Multipath TCP lets one logical TCP connection use multiple subflows, such as Wi‑Fi and cellular ([RFC 8684](https://www.rfc-editor.org/rfc/rfc8684)).
+
+```text
+logical TCP connection
+├── subflow 1 over Wi‑Fi
+└── subflow 2 over LTE
+```
+
+It can improve throughput and resilience, while preserving a TCP-like abstraction for applications.
+
+## Summary
+
+| Technology | Mux level | Transport | Main benefit |
+|---|---|---|---|
+| HTTP/2 | Application streams | TCP | Many HTTP streams on one connection. |
+| QUIC/HTTP/3 | Transport streams | UDP | Avoids TCP head-of-line blocking. |
+| Connection pool | Application scheduling | TCP/UDP | Reuse and cap connections. |
+| MPTCP | Transport subflows | TCP | Multiple network paths. |
+
+## Retrieval check
+
+<Accordions>
+<Accordion title="What is demultiplexing in HTTP/2?" id="h2-demux">
+The receiver reads each frame's stream ID and routes the frame to the correct logical request/response stream.
+</Accordion>
+<Accordion title="Why can HTTP/2 still suffer from head-of-line blocking?" id="h2-tcp-hol">
+Because HTTP/2 runs over TCP, and TCP delivers one ordered byte stream. A lost TCP packet blocks later bytes for all streams until retransmitted.
+</Accordion>
+</Accordions>
+
+## Primary source
+
+Read: [HTTP/2 — RFC 9113](https://www.rfc-editor.org/rfc/rfc9113), [QUIC — RFC 9000](https://www.rfc-editor.org/rfc/rfc9000), and [HTTP/3 — RFC 9114](https://www.rfc-editor.org/rfc/rfc9114).

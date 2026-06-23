@@ -1,0 +1,96 @@
+---
+title: Publish/Subscribe
+description: Publishers emit events; subscribers receive the events they care about.
+---
+
+<Callout type="info">
+Pub/sub decouples producers from consumers. The publisher does not need to know who receives the message.
+</Callout>
+
+## Core idea
+
+A publisher sends a message to a topic/channel. Subscribers receive messages from topics/channels they subscribed to.
+
+This shape is common in message brokers and event systems such as Redis Pub/Sub ([Redis docs](https://redis.io/docs/latest/develop/pubsub/)), RabbitMQ, Kafka, Google Pub/Sub, and NATS.
+
+<PubSubFlowLab />
+
+## Why not request/response?
+
+In request/response, the sender usually chooses the receiver. In pub/sub, the publisher emits facts and subscribers decide what they care about.
+
+| Request/response | Publish/subscribe |
+|---|---|
+| Client knows server. | Publisher knows topic. |
+| One request gets one response. | One event can fan out to many subscribers. |
+| Tight temporal coupling. | Consumers can be added without changing publisher. |
+| Best for commands/queries. | Best for events/fanout. |
+
+## Example event
+
+```json
+{
+  "id": "evt_123",
+  "type": "order.created",
+  "time": "2026-06-23T10:15:00Z",
+  "data": {
+    "orderId": "ord_42",
+    "userId": "usr_7"
+  }
+}
+```
+
+CloudEvents is a CNCF specification for describing event metadata consistently across systems ([CloudEvents spec](https://cloudevents.io/)).
+
+## Delivery semantics
+
+The biggest pub/sub question is: **what does delivery mean?**
+
+| Semantic | Meaning | Design consequence |
+|---|---|---|
+| At most once | Message may be lost, never duplicated. | Fast, but unsafe for critical work. |
+| At least once | Message is retried until delivered. | Consumers must be idempotent. |
+| Exactly once | System attempts no loss and no duplicates. | Hard, expensive, often scoped narrowly. |
+
+In practice, many systems are **at-least-once**, so consumers should safely handle duplicates.
+
+## Pros and cons
+
+| Pros | Cons |
+|---|---|
+| Great fanout to many receivers. | Message ordering can be tricky. |
+| Loose coupling between services. | Delivery guarantees are subtle. |
+| Subscribers can be added later. | Debugging is harder than direct calls. |
+| Useful when consumers are temporarily down. | Broker becomes critical infrastructure. |
+
+## Pub/sub vs queue
+
+| Pub/sub topic | Work queue |
+|---|---|
+| Many subscribers may each get the event. | One worker usually claims each job. |
+| Used for facts: `payment.succeeded`. | Used for tasks: `resize this image`. |
+| Fanout is the point. | Load distribution is the point. |
+
+## Use pub/sub when
+
+- multiple services need the same event
+- producer should not know all consumers
+- consumers may be added later
+- event history, replay, or fanout matter
+
+Use request/response when the caller needs a direct answer now. Use a queue when exactly one worker should perform a job.
+
+## Retrieval check
+
+<Accordions>
+<Accordion title="What coupling does pub/sub remove?" id="pubsub-coupling">
+It removes direct coupling between publisher and subscriber. The publisher only knows the topic/channel, not every receiver.
+</Accordion>
+<Accordion title="Why must at-least-once consumers be idempotent?" id="pubsub-idempotent">
+Because the same message can be delivered more than once. Reprocessing it should not create duplicate side effects.
+</Accordion>
+</Accordions>
+
+## Primary source
+
+Read: [Redis Pub/Sub](https://redis.io/docs/latest/develop/pubsub/) for a minimal model, then compare with durable log systems like [Apache Kafka](https://kafka.apache.org/documentation/).

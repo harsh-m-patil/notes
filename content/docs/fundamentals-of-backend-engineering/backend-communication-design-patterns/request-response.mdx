@@ -1,0 +1,120 @@
+---
+title: Request/Response
+description: One bounded request, one bounded response.
+---
+
+<Callout type="info">
+Request/response is the default mental model for most backend APIs: the client asks for one thing, the server returns one answer, and both sides know where the message starts and ends.
+</Callout>
+
+## Core idea
+
+> A client sends a **request**. The server parses it, does work, then sends a **response**.
+
+<RequestResponseDiagram />
+
+HTTP defines requests and responses as protocol messages with a start line, headers, and optional content/body ([RFC 9110](https://www.rfc-editor.org/rfc/rfc9110)).
+
+## Anatomy of an HTTP request
+
+```http
+GET /users/42 HTTP/1.1
+Host: api.example.com
+Accept: application/json
+
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"id":42,"name":"Ada"}
+```
+
+<RequestResponseInspector />
+
+A usable request/response protocol needs:
+
+| Requirement | Why it matters |
+|---|---|
+| Boundary | Receiver knows when the message ends. |
+| Metadata | Headers/status describe how to interpret the body. |
+| Method | Client states intent: read, create, update, delete. |
+| Status | Server states outcome: success, retry, auth failure, etc. |
+
+## Where you see it
+
+- Web APIs: REST, GraphQL-over-HTTP, SOAP
+- RPC: gRPC, JSON-RPC, Language Server Protocol, MCP
+- Databases: SQL wire protocols
+- Infrastructure: DNS queries, SSH commands, many control-plane APIs
+
+## Example: image upload service
+
+<Tabs items={["Simple", "Resumable"]}>
+<Tab>
+
+```text
+POST /images
+Body: entire image
+
+201 Created
+Body: { "imageId": "img_123" }
+```
+
+Good when files are small and network failures are rare.
+
+</Tab>
+<Tab>
+
+```text
+POST /uploads           -> { "uploadId": "up_123" }
+PUT /uploads/up_123/1   -> chunk 1 acknowledged
+PUT /uploads/up_123/2   -> chunk 2 acknowledged
+POST /uploads/up_123/complete
+```
+
+Better when files are large, networks fail, or upload must resume.
+
+</Tab>
+</Tabs>
+
+## Strengths and limits
+
+| Works well when... | Starts hurting when... |
+|---|---|
+| The operation is fast. | The operation takes minutes. |
+| Client knows exactly when to ask. | Server needs to notify client later. |
+| One client needs one answer. | Many subscribers need the same event. |
+| Failure can be retried safely. | Retrying can duplicate side effects. |
+
+For long-running work, return a job id and use [short polling](./short-polling) or [long polling](./long-polling). For server-driven updates, use [server-sent events](./server-sent-events), [push](./push), or [publish/subscribe](./pub-sub).
+
+## Debug it yourself
+
+```bash
+curl -v --trace request-response.trace https://example.com
+```
+
+Look for:
+
+1. Request line: method + path + HTTP version
+2. Request headers
+3. Response status
+4. Response headers
+5. Response body
+
+## Retrieval check
+
+<Accordions>
+<Accordion title="What are the two boundaries every request/response protocol must define?" id="rr-boundaries">
+The request boundary and the response boundary. Without boundaries, the receiver cannot know when one message ends and the next begins.
+</Accordion>
+<Accordion title="Why is request/response a poor fit for chat notifications?" id="rr-chat-limits">
+The server often knows about the event before the client asks. Polling can simulate this, but it wastes requests and adds latency.
+</Accordion>
+</Accordions>
+
+## Primary source
+
+Read: [HTTP Semantics — RFC 9110](https://www.rfc-editor.org/rfc/rfc9110), especially the sections on messages, methods, and status codes.

@@ -1,0 +1,137 @@
+---
+title: Stateless vs Stateful
+description: Does the backend need remembered conversation state to handle the next request?
+---
+
+## The key test
+
+> Can you restart this backend instance between two client requests and still continue the workflow correctly?
+
+If yes, the backend instance is probably stateless. If no, it is stateful.
+
+## Stateful backend
+
+A stateful backend stores client/session/workflow state in its own memory and depends on that memory for future requests.
+
+```text
+/login
+  verify password
+  store session in this process memory
+  return session cookie
+
+/me
+  read session id from cookie
+  look up session in this process memory
+```
+
+If the process restarts, sessions disappear. Behind a load balancer, clients may need sticky sessions so the same user returns to the same instance.
+
+## Stateless backend
+
+A stateless backend can safely lose local memory. It may still use external state like databases, caches, object storage, or queues.
+
+```text
+/login
+  verify password
+  store session in Redis or sign JWT
+  return cookie/token
+
+/me
+  read cookie/token
+  verify token or fetch session from Redis
+```
+
+<Mermaid
+  chart={`
+graph LR
+    C[Client] --> LB[Load Balancer]
+    LB --> A[API instance A]
+    LB --> B[API instance B]
+    A --> R[(Redis / DB)]
+    B --> R
+`}
+/>
+
+The backend instances are stateless; the **system** is still stateful because Redis/DB stores state.
+
+<StatefulSessionLab />
+
+## HTTP and statelessness
+
+HTTP is designed as a stateless application protocol: each request can be understood in isolation, though applications often add cookies, authentication, and server-side sessions ([RFC 9110](https://www.rfc-editor.org/rfc/rfc9110), [Fielding dissertation](https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm)).
+
+## Stateful vs stateless protocols
+
+| Protocol/system | Stateful? | Why |
+|---|---|---|
+| TCP | Stateful | Maintains connection sequence numbers, windows, retransmission state. |
+| UDP | Stateless | Sends independent datagrams, no built-in connection state. |
+| HTTP | Mostly stateless | Each request carries enough context at application level. |
+| QUIC | Stateful over UDP | Uses connection IDs, streams, congestion control, TLS state. |
+| JWT auth | Can be stateless | Server verifies signed claims without session lookup. |
+
+You can build a stateless application protocol on a stateful transport, like HTTP over TCP. You can also build a stateful transport over a stateless one, like QUIC over UDP ([RFC 9000](https://www.rfc-editor.org/rfc/rfc9000)).
+
+## Tradeoffs
+
+| Stateless backend | Stateful backend |
+|---|---|
+| Easier horizontal scaling. | Faster local lookups. |
+| Easier failover/restarts. | Simpler for connection-heavy sessions. |
+| Needs external state or signed state. | Needs sticky routing or state replication. |
+| Often more DB/cache reads. | Local memory loss can break users. |
+
+## Common designs
+
+<Tabs items={["Server session", "Redis session", "JWT"]}>
+<Tab>
+
+Stateful instance memory.
+
+```text
+cookie: sessionId=abc
+server memory: abc -> userId=42
+```
+
+Fast, but restart loses sessions unless replicated.
+
+</Tab>
+<Tab>
+
+Stateless instances, external session store.
+
+```text
+cookie: sessionId=abc
+Redis: abc -> userId=42
+```
+
+Scales better, but every request may need Redis.
+
+</Tab>
+<Tab>
+
+Signed state carried by client.
+
+```text
+Authorization: Bearer <signed JWT>
+```
+
+No session lookup, but revocation and token size must be designed carefully.
+
+</Tab>
+</Tabs>
+
+## Retrieval check
+
+<Accordions>
+<Accordion title="Can a stateless backend write to a database?" id="stateless-db">
+Yes. Stateless means the backend instance does not depend on its own local memory between requests. The overall system can still store state externally.
+</Accordion>
+<Accordion title="Why do stateful backends often need sticky sessions?" id="sticky-sessions">
+Because the required session state may exist only in one backend instance's memory, so the load balancer must keep routing that client to the same instance.
+</Accordion>
+</Accordions>
+
+## Primary source
+
+Read: [REST architectural style — Stateless constraint](https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm) and [HTTP Semantics — RFC 9110](https://www.rfc-editor.org/rfc/rfc9110).

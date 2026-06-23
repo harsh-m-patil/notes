@@ -1,0 +1,16 @@
+{
+  "title": "Backend Communication Design Patterns",
+  "description": "How clients and servers talk: from simple request/response to real-time push, pub/sub, and infrastructure patterns.",
+  "pages": [
+    "sync-async",
+    "request-response",
+    "short-polling",
+    "long-polling",
+    "server-sent-events",
+    "push",
+    "pub-sub",
+    "multiplexing-vs-demultiplexing",
+    "stateless-stateful",
+    "sidecar-pattern"
+  ]
+}
