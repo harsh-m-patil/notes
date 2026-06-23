@@ -1,47 +1,41 @@
-"use client";
-import { useMemo, useState } from "react";
-import {
-  Check,
-  ChevronDown,
-  Copy,
-  ExternalLinkIcon,
-  MessageCircleIcon,
-} from "lucide-react";
-import { cn } from "@/lib/cn";
-import { useCopyButton } from "fumadocs-ui/utils/use-copy-button";
-import { buttonVariants } from "fumadocs-ui/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "fumadocs-ui/components/ui/popover";
+'use client';
+import { type ComponentProps, useMemo, useState } from 'react';
+import { Check, ChevronDown, Copy, ExternalLinkIcon, TextIcon } from 'lucide-react';
+import { cn } from '../../lib/cn';
+import { useCopyButton } from 'fumadocs-ui/utils/use-copy-button';
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
+import { buttonVariants } from '../ui/button';
+import { usePathname } from 'fumadocs-core/framework';
+import { useTranslations } from '@fuma-translate/react';
 
-const cache = new Map<string, string>();
+const cache = new Map<string, Promise<string>>();
 
-export function LLMCopyButton({
+/**
+ * see https://fumadocs.dev/docs/integrations/llms#page-actions to customize.
+ */
+export function MarkdownCopyButton({
+  markdownUrl,
+  ...props
+}: ComponentProps<'button'> & {
   /**
    * A URL to fetch the raw Markdown/MDX content of page
    */
-  markdownUrl,
-}: {
   markdownUrl: string;
 }) {
+  const t = useTranslations({ note: 'page actions' });
   const [isLoading, setLoading] = useState(false);
   const [checked, onClick] = useCopyButton(async () => {
     const cached = cache.get(markdownUrl);
-    if (cached) return navigator.clipboard.writeText(cached);
+    if (cached) return navigator.clipboard.writeText(await cached);
 
     setLoading(true);
 
     try {
+      const promise = fetch(markdownUrl).then((res) => res.text());
+      cache.set(markdownUrl, promise);
       await navigator.clipboard.write([
         new ClipboardItem({
-          "text/plain": fetch(markdownUrl).then(async (res) => {
-            const content = await res.text();
-            cache.set(markdownUrl, content);
-
-            return content;
-          }),
+          'text/plain': promise,
         }),
       ]);
     } finally {
@@ -52,45 +46,53 @@ export function LLMCopyButton({
   return (
     <button
       disabled={isLoading}
+      onClick={onClick}
+      {...props}
       className={cn(
         buttonVariants({
-          color: "secondary",
-          size: "sm",
-          className: "gap-2 [&_svg]:size-3.5 [&_svg]:text-fd-muted-foreground",
+          color: 'secondary',
+          size: 'sm',
+          className: 'gap-2 [&_svg]:size-3.5 [&_svg]:text-fd-muted-foreground',
         }),
+        props.className,
       )}
-      onClick={onClick}
     >
       {checked ? <Check /> : <Copy />}
-      Copy Markdown
+      {props.children ?? t('Copy Markdown')}
     </button>
   );
 }
 
-export function ViewOptions({
+/**
+ * see https://fumadocs.dev/docs/integrations/llms#page-actions to customize.
+ */
+export function ViewOptionsPopover({
   markdownUrl,
   githubUrl,
-}: {
+  ...props
+}: ComponentProps<typeof PopoverTrigger> & {
   /**
    * A URL to the raw Markdown/MDX content of page
    */
-  markdownUrl: string;
+  markdownUrl?: string;
 
   /**
    * Source file URL on GitHub
    */
-  githubUrl: string;
+  githubUrl?: string;
 }) {
+  const pathname = usePathname();
+  const t = useTranslations({ note: 'page actions' });
   const items = useMemo(() => {
-    const fullMarkdownUrl =
-      typeof window !== "undefined"
-        ? new URL(markdownUrl, window.location.origin)
-        : "loading";
-    const q = `Read ${fullMarkdownUrl}, I want to ask questions about it.`;
+    const pageUrl =
+      typeof window === 'undefined' ? pathname : new URL(pathname, window.location.origin);
+    const q = t('Read {url}, I want to ask questions about it.', {
+      variables: { url: String(pageUrl) },
+    });
 
     return [
-      {
-        title: "Open in GitHub",
+      githubUrl && {
+        title: t('Open in GitHub'),
         href: githubUrl,
         icon: (
           <svg fill="currentColor" role="img" viewBox="0 0 24 24">
@@ -99,8 +101,13 @@ export function ViewOptions({
           </svg>
         ),
       },
+      markdownUrl && {
+        title: t('View as Markdown'),
+        href: markdownUrl,
+        icon: <TextIcon />,
+      },
       {
-        title: "Open in Scira AI",
+        title: t('Open in Scira AI'),
         href: `https://scira.ai/?${new URLSearchParams({
           q,
         })}`,
@@ -164,9 +171,9 @@ export function ViewOptions({
         ),
       },
       {
-        title: "Open in ChatGPT",
+        title: t('Open in ChatGPT'),
         href: `https://chatgpt.com/?${new URLSearchParams({
-          hints: "search",
+          hints: 'search',
           q,
         })}`,
         icon: (
@@ -182,7 +189,7 @@ export function ViewOptions({
         ),
       },
       {
-        title: "Open in Claude",
+        title: t('Open in Claude'),
         href: `https://claude.ai/new?${new URLSearchParams({
           q,
         })}`,
@@ -199,27 +206,39 @@ export function ViewOptions({
         ),
       },
       {
-        title: "Open in T3 Chat",
-        href: `https://t3.chat/new?${new URLSearchParams({
-          q,
+        title: t('Open in Cursor'),
+        icon: (
+          <svg
+            fill="currentColor"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <title>Cursor</title>
+            <path d="M11.503.131 1.891 5.678a.84.84 0 0 0-.42.726v11.188c0 .3.162.575.42.724l9.609 5.55a1 1 0 0 0 .998 0l9.61-5.55a.84.84 0 0 0 .42-.724V6.404a.84.84 0 0 0-.42-.726L12.497.131a1.01 1.01 0 0 0-.996 0M2.657 6.338h18.55c.263 0 .43.287.297.515L12.23 22.918c-.062.107-.229.064-.229-.06V12.335a.59.59 0 0 0-.295-.51l-9.11-5.257c-.109-.063-.064-.23.061-.23" />
+          </svg>
+        ),
+        href: `https://cursor.com/link/prompt?${new URLSearchParams({
+          text: q,
         })}`,
-        icon: <MessageCircleIcon />,
       },
-    ];
-  }, [githubUrl, markdownUrl]);
+    ].filter((v) => !!v);
+  }, [githubUrl, markdownUrl, pathname, t]);
 
   return (
     <Popover>
       <PopoverTrigger
+        {...props}
         className={cn(
           buttonVariants({
-            color: "secondary",
-            size: "sm",
-            className: "gap-2",
+            color: 'secondary',
+            size: 'sm',
           }),
+          'gap-2 data-[state=open]:bg-fd-accent data-[state=open]:text-fd-accent-foreground',
+          props.className,
         )}
       >
-        Open
+        {props.children ?? t('Open')}
         <ChevronDown className="size-3.5 text-fd-muted-foreground" />
       </PopoverTrigger>
       <PopoverContent className="flex flex-col">
