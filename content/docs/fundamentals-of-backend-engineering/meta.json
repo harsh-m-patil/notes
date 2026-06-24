@@ -1,4 +1,7 @@
 {
-  "title": "Fundamentals of Backend Engineering",
-  "pages": ["backend-communication-design-patterns"]
+	"title": "Fundamentals of Backend Engineering",
+	"pages": [
+		"backend-communication-design-patterns",
+		"protocols"
+	]
 }

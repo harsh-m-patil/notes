@@ -1,0 +1,129 @@
+---
+title: Protocol Properties
+description: What to take into mind when designing a protocol
+---
+
+## What is a protocol
+
+A protocol is a **set of rules** that allows two or more parties to communicate. Every protocol is designed with a specific purpose, and that purpose dictates which properties it prioritizes.
+
+Examples: TCP, UDP, HTTP, gRPC, FTP, SMTP, WebSocket.
+
+<Callout type="info">
+No protocol optimizes for everything. Each one makes trade-offs — reliability vs speed, simplicity vs features, statefulness vs scalability.
+</Callout>
+
+## Protocol Properties
+
+When designing or evaluating a protocol, consider these dimensions:
+
+### Data format
+
+How the data is encoded on the wire.
+
+| Format | Examples | Trade-off |
+|---|---|---|
+| Text-based | Plain text, JSON, XML, HTTP/1.1 headers | Human-readable, easy to debug; larger payloads |
+| Binary | Protobuf, RESP, HTTP/2 frames, HTTP/3 | Compact, fast to parse; not human-readable |
+
+Text-based protocols are great during development (you can `curl` and read the response). Binary protocols shine in production where parsing speed and bandwidth matter.
+
+### Transfer mode
+
+How data boundaries are defined.
+
+- **Message-based** (UDP, HTTP): Each unit has a clear start and end. The receiver gets discrete messages.
+- **Stream-based** (TCP, WebRTC data channels): Data arrives as a continuous byte stream with no inherent boundaries. The application must define its own framing (e.g., `Content-Length` in HTTP/1.1, length-prefix in gRPC).
+
+<Callout type="warn">
+Stream-based protocols require you to solve the **framing problem** — how does the receiver know where one message ends and the next begins?
+</Callout>
+
+### Addressing system
+
+How the sender identifies the receiver.
+
+| Layer | Address type | Example |
+|---|---|---|
+| Application | DNS name | `api.example.com` |
+| Network | IP address | `192.168.1.1`, `::1` |
+| Data link | MAC address | `aa:bb:cc:dd:ee:ff` |
+
+Higher-layer addresses resolve down to lower-layer ones (DNS → IP → MAC via ARP).
+
+### Directionality
+
+Who can send data and when.
+
+- **Simplex**: One direction only (rare in networking; think broadcast radio).
+- **Half-duplex**: Both sides can send, but not at the same time (e.g., HTTP/1.1 request-response cycle).
+- **Full-duplex**: Both sides send simultaneously (TCP connection, WebSocket).
+
+| Protocol | Directionality | Notes |
+|---|---|---|
+| HTTP/1.1 | Half-duplex | Client sends request, waits for response |
+| HTTP/2 | Full-duplex (multiplexed) | Multiple streams over one connection |
+| TCP | Full-duplex | Either side can write at any time |
+| WebSocket | Full-duplex | Upgraded from HTTP, both sides push |
+
+### Statefulness
+
+Does the protocol remember previous interactions?
+
+- **Stateful** (TCP, gRPC, Apache Thrift): The server maintains per-connection state (sequence numbers, session context). More powerful but harder to scale horizontally.
+- **Stateless** (UDP, HTTP): Each request is independent. Easier to scale (any server can handle any request), but the application must manage state externally (cookies, tokens, databases).
+
+<Callout type="info">
+HTTP is stateless by design, but applications layer statefulness on top via cookies, JWTs, and session stores.
+</Callout>
+
+### Routing
+
+How traffic is directed between sender and receiver.
+
+- **Proxies**: Intermediaries that forward requests on behalf of clients (forward proxy) or servers (reverse proxy). Can cache, load balance, or filter.
+- **Gateways**: Translate between protocols (e.g., an API gateway accepting HTTP and forwarding as gRPC).
+- **Load balancers**: Distribute traffic across multiple backends (L4 works at TCP level, L7 at HTTP level).
+
+Routing decisions can be based on IP, port, URL path, headers, or even message content.
+
+### Flow and congestion control
+
+Mechanisms to prevent overwhelming the receiver or the network.
+
+| Mechanism | Purpose | Protocol |
+|---|---|---|
+| Flow control | Prevent sender from overwhelming the **receiver** | TCP (sliding window) |
+| Congestion control | Prevent sender from overwhelming the **network** | TCP (slow start, AIMD, BBR) |
+| No control | Fire and forget — application must handle loss | UDP |
+
+TCP's flow control uses a **receive window** advertised by the receiver. Congestion control algorithms (Reno, CUBIC, BBR) adapt sending rate based on detected packet loss or delay.
+
+### Error management
+
+How the protocol detects and recovers from errors.
+
+- **Detection**: Checksums (TCP, UDP), CRC (Ethernet), hash verification.
+- **Signaling**: Error/status codes (HTTP 4xx/5xx, ICMP errors, TCP RST).
+- **Recovery**: Retransmissions (TCP ACK-based), timeouts, idempotency keys (application level).
+
+| Strategy | Where | Example |
+|---|---|---|
+| Automatic retransmission | Transport | TCP retransmits unACKed segments |
+| Application-level retry | Application | Client retries on 503 with exponential backoff |
+| Timeout | Both | TCP keepalive, HTTP request timeout |
+| Idempotency | Application | Stripe idempotency keys for safe retries |
+
+<Callout type="warn">
+Retries without idempotency can cause duplicate side effects. Always consider whether the operation is safe to repeat.
+</Callout>
+
+## Choosing properties: a design exercise
+
+When designing a protocol (or choosing one), ask:
+
+1. **What data am I sending?** → Format (text vs binary), transfer mode
+2. **Who am I talking to?** → Addressing, routing
+3. **Do I need ordering/reliability?** → Statefulness, error control
+4. **How fast does it need to be?** → Flow/congestion control, format overhead
+5. **Who initiates communication?** → Directionality

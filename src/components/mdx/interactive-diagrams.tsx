@@ -28,7 +28,9 @@ import {
   type Tone,
 } from "@/components/mdx/backend-communication-labs";
 import {
+  AnimatePresence,
   DiagramShell,
+  motion,
   PrimaryButton,
   RangeControl,
   SecondaryButton,
@@ -113,14 +115,23 @@ export function RequestResponseInspector() {
             {'{"id":42,"name":"Ada"}'}
           </div>
         </div>
-        <div className="rounded-lg border p-4">
-          <div className="text-xs uppercase tracking-wide text-fd-muted-foreground">
-            Selected part
-          </div>
-          <div className="mt-1 text-lg font-semibold">{selected.label}</div>
-          <div className="mt-3 text-sm font-mono text-fd-primary">{selected.example}</div>
-          <p className="mt-3 text-sm text-fd-muted-foreground">{selected.why}</p>
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={part}
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -8 }}
+            transition={{ duration: 0.2 }}
+            className="rounded-lg border p-4"
+          >
+            <div className="text-xs uppercase tracking-wide text-fd-muted-foreground">
+              Selected part
+            </div>
+            <div className="mt-1 text-lg font-semibold">{selected.label}</div>
+            <div className="mt-3 text-sm font-mono text-fd-primary">{selected.example}</div>
+            <p className="mt-3 text-sm text-fd-muted-foreground">{selected.why}</p>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </DiagramShell>
   );
@@ -311,8 +322,22 @@ export function SSEStreamBuilder() {
           </ToggleButton>
         </div>
         <div className="grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
-          <pre className="overflow-x-auto rounded-lg border bg-fd-secondary/20 p-4 text-sm">{stream.raw}</pre>
-          <div className="space-y-3 rounded-lg border p-4 text-sm">
+          <motion.pre
+            key={stream.raw}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-x-auto rounded-lg border bg-fd-secondary/20 p-4 text-sm"
+          >
+            {stream.raw}
+          </motion.pre>
+          <motion.div
+            key={stream.clientState}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-3 rounded-lg border p-4 text-sm"
+          >
             <div>
               <div className="font-medium">Client state</div>
               <div className="text-fd-muted-foreground">{stream.clientState}</div>
@@ -321,7 +346,7 @@ export function SSEStreamBuilder() {
               <div className="font-medium">Reconnect header</div>
               <div className="mt-1 rounded-md bg-fd-secondary/30 p-2 font-mono text-xs">{stream.reconnectHeader}</div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </DiagramShell>
     </div>
@@ -504,20 +529,35 @@ export function PubSubFlowLab() {
             {publishCount === 0 ? "No event published yet." : `Latest: ${flow.eventId}`}
           </span>
         </div>
-        {publishCount > 0 && (
-          <div className="rounded-lg border p-4 text-sm">
-            <div className="font-medium">Observed delivery</div>
-            {flow.deliveries.length === 0 ? (
-              <div className="mt-2 text-fd-muted-foreground">No active consumers.</div>
-            ) : (
-              <ul className="mt-2 space-y-1 text-fd-muted-foreground">
-                {flow.deliveries.map((d) => (
-                  <li key={d.key}>{d.receiver} received {flow.eventId}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
+        <AnimatePresence>
+          {publishCount > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden rounded-lg border p-4 text-sm"
+            >
+              <div className="font-medium">Observed delivery</div>
+              {flow.deliveries.length === 0 ? (
+                <div className="mt-2 text-fd-muted-foreground">No active consumers.</div>
+              ) : (
+                <ul className="mt-2 space-y-1 text-fd-muted-foreground">
+                  {flow.deliveries.map((d) => (
+                    <motion.li
+                      key={d.key}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {d.receiver} received {flow.eventId}
+                    </motion.li>
+                  ))}
+                </ul>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </DiagramShell>
     </div>
   );
