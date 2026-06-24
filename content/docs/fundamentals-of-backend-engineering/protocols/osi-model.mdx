@@ -3,19 +3,159 @@ title: OSI Model
 description: Open Systems Interconnection Model
 ---
 
+import { Callout } from 'fumadocs-ui/components/callout';
+
 ## Why do we need a communication model?
 
 ### Agnostic applications
 
 - Without a standard model, your application must have knowledge of the underlying network medium
 - Imagine if you have to author different versions of your apps so that it works on wifi vs ethernet vs LTE vs fiber
+- The model gives each layer a contract — your app talks to the transport layer, not to the NIC directly
 
 ### Network Equipment Management
 
-- Without a standard model, upgrading network equipments becomes difficult
+- Without a standard model, upgrading network equipment becomes difficult
+- A router only needs to understand up to Layer 3 — it can be swapped without touching application code
 
 ### Decoupled innovation 
 
-- Innovations can be done in each layer seperately without affecting the rest of the model
+- Innovations can be done in each layer separately without affecting the rest of the model
+- Example: moving from HTTP/1.1 to HTTP/2 changed Layer 7 framing but required zero changes at Layer 3 or below
 
+## What is the OSI Model
+
+- 7 layers each describe a specific networking component
+- Data flows **down** the stack on the sender, across the wire, then **up** the stack on the receiver
+- Each layer adds its own header (encapsulation) on send and strips it (decapsulation) on receive
+
+| Layer | Name | PDU (Protocol Data Unit) | Examples |
+|---|---|---|---|
+| 7 | Application | Data/Message | HTTP, FTP, gRPC, DNS, SMTP |
+| 6 | Presentation | Data | Encoding, Serialization, Encryption |
+| 5 | Session | Data | Connection establishment, TLS handshake |
+| 4 | Transport | Segment (TCP) / Datagram (UDP) | TCP, UDP, QUIC |
+| 3 | Network | Packet | IP, ICMP, IPSec |
+| 2 | Data Link | Frame | Ethernet, Wi-Fi (802.11), ARP |
+| 1 | Physical | Bits | Electric signals, fiber optics, radio waves |
+
+<Callout type="info">
+The OSI model is a **conceptual** model. Real-world protocols (like TCP/IP) don't map perfectly to all 7 layers. Layers 5–7 are often collapsed into a single "Application" layer in practice.
+</Callout>
+
+## Encapsulation & Decapsulation
+
+As data moves down the stack, each layer wraps the previous layer's output with its own header:
+
+```
+[L2 Header | L3 Header | L4 Header | Application Data | L2 Trailer]
+     Frame      Packet     Segment        Payload           FCS
+```
+
+On the receiving end, each layer strips its header and passes the payload up.
+
+<OSIEncapsulationDiagram />
+
+## Example: Sending a POST request to an HTTPS webpage
+
+### Sender side (top → down)
+
+| Layer | What happens |
+|---|---|
+| 7 - Application | POST request with JSON body to `https://api.example.com/users` |
+| 6 - Presentation | Serialize JSON to flat byte string, encrypt via TLS |
+| 5 - Session | Establish (or reuse) a TLS session over TCP |
+| 4 - Transport | Segment the data, attach source port (ephemeral) and dest port `443`, send SYN to initiate |
+| 3 - Network | Place segment in IP packet(s), add source IP and destination IP (resolved via DNS → A record) |
+| 2 - Data Link | Wrap each packet in a frame, add source MAC and destination MAC (next-hop router, resolved via ARP) |
+| 1 - Physical | Convert frame bits into electrical signals, light pulses, or radio waves depending on medium |
+
+### Receiver side (bottom → up)
+
+| Layer | What happens |
+|---|---|
+| 1 - Physical | Receive raw signal (electrical/optical/radio), convert back to bits |
+| 2 - Data Link | Read frame, validate CRC/FCS checksum, check dest MAC matches NIC, strip L2 header → pass packet up |
+| 3 - Network | Read IP header, verify dest IP matches this host (or route further if it's a router), strip L3 header → pass segment up |
+| 4 - Transport | Read TCP header, match to open socket via `(src IP, src port, dest IP, dest port)` tuple, reassemble segments in order, send ACK |
+| 5 - Session | Validate TLS session, decrypt payload using session keys |
+| 6 - Presentation | Deserialize byte string back into structured data (JSON object) |
+| 7 - Application | Web server processes the POST request, routes to handler, returns HTTP response |
+
+<Callout type="warn">
+The destination MAC address in Layer 2 is **not** the final server's MAC — it's the MAC of the **next hop** (usually your default gateway/router). The MAC changes at every hop; the IP stays the same end-to-end.
+</Callout>
+
+## Layer details
+
+### Layer 1 — Physical
+
+- Defines the hardware: cables, connectors, voltage levels, frequencies
+- No concept of "packets" — just raw bitstreams
+- Examples: Cat6 Ethernet cable, fiber optic, 5GHz Wi-Fi radio
+
+### Layer 2 — Data Link
+
+- Responsible for **hop-to-hop** delivery (between directly connected nodes)
+- Uses MAC addresses (48-bit hardware addresses)
+- Handles frame synchronization, error detection (CRC), and media access control
+- Switch operates at this layer — it reads the dest MAC and forwards to the correct port
+
+### Layer 3 — Network
+
+- Responsible for **end-to-end** delivery across multiple networks
+- Uses IP addresses (logical, assigned by admin/DHCP)
+- Router operates at this layer — it reads the dest IP and decides the next hop
+- Handles fragmentation if packet exceeds MTU (Maximum Transmission Unit, typically 1500 bytes on Ethernet)
+
+### Layer 4 — Transport
+
+- Responsible for **process-to-process** delivery (via port numbers)
+- TCP: reliable, ordered, connection-oriented (3-way handshake)
+- UDP: unreliable, unordered, connectionless — but fast
+- See [Protocol Properties](./protocol-properties) for flow control, congestion control, and error management
+
+### Layer 5 — Session
+
+- Manages opening, closing, and maintaining sessions between applications
+- In practice this is often handled by the transport or application layer
+- TLS handshake lives conceptually here (establishing shared secrets)
+
+### Layer 6 — Presentation
+
+- Data translation: encoding (UTF-8, ASCII), serialization (JSON, Protobuf), compression (gzip), encryption
+- Ensures both sides agree on how to interpret the bytes
+
+### Layer 7 — Application
+
+- The protocol the end user/application interacts with
+- HTTP, FTP, SMTP, DNS, gRPC, WebSocket, SSH
+- This is where [protocol properties](./protocol-properties) like directionality and statefulness are most visible to the developer
+
+## OSI vs TCP/IP Model
+
+| OSI Layer | TCP/IP Layer |
+|---|---|
+| 7, 6, 5 — Application, Presentation, Session | Application |
+| 4 — Transport | Transport |
+| 3 — Network | Internet |
+| 2, 1 — Data Link, Physical | Network Access (Link) |
+
+The TCP/IP model is what the internet actually runs on. The OSI model is more useful as a **teaching and debugging** framework — when something breaks, you can isolate which layer the problem is at.
+
+## End-to-End Flow
+
+Step through the complete journey of an HTTPS POST from sender application down to bits, across the wire, and back up at the receiver:
+
+<OSIFlowDiagram />
+
+## Debugging with the OSI Model
+
+When troubleshooting, work **bottom-up**:
+
+1. **Physical**: Is the cable plugged in? Is the NIC up? (`ip link show`)
+2. **Data Link**: Can you see the device on the local network? (`arp -a`)
+3. **Network**: Can you ping the destination IP? (`ping`, `traceroute`)
+4. **Transport**: Can you reach the port? (`telnet host 443`, `nc -zv host 443`)
+5. **Session/Application**: Is TLS succeeding? Is the HTTP response valid? (`curl -v`, `openssl s_client`)
 

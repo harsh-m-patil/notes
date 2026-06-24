@@ -1,0 +1,237 @@
+---
+title: Basic Linux Commands
+description: Essential commands every developer should know — navigation, file management, permissions, and environment.
+---
+
+## Navigation & File System
+
+### `cd` — Change Directory
+
+```bash
+cd /var/log        # absolute path
+cd ../             # parent directory
+cd ~               # home directory
+cd -               # previous directory (toggle)
+```
+
+### `ls` — List Directory Contents
+
+```bash
+ls                 # list files
+ls -la             # long format + hidden files
+ls -lh             # human-readable sizes
+ls -lt             # sort by modification time (newest first)
+ls -lS             # sort by size (largest first)
+```
+
+### `pwd` — Print Working Directory
+
+```bash
+pwd                # shows full path of current directory
+```
+
+---
+
+## File Operations
+
+### `cp` — Copy
+
+```bash
+cp file.txt backup.txt          # copy file
+cp -r src/ dest/                # copy directory recursively
+cp -i file.txt dest/            # interactive (prompt before overwrite)
+```
+
+### `mv` — Move / Rename
+
+```bash
+mv old.txt new.txt              # rename
+mv file.txt /tmp/               # move to another directory
+mv -i file.txt dest/            # prompt before overwrite
+```
+
+### `rm` — Remove
+
+```bash
+rm file.txt                     # delete file
+rm -r directory/                # delete directory recursively
+rm -rf directory/               # force delete (no prompts) — USE WITH CAUTION
+rm -i file.txt                  # interactive (confirm each file)
+```
+
+### `mkdir` / `rmdir`
+
+```bash
+mkdir new_dir                   # create directory
+mkdir -p a/b/c                  # create nested directories
+rmdir empty_dir                 # remove empty directory only
+```
+
+### `touch`
+
+```bash
+touch newfile.txt               # create empty file or update timestamp
+```
+
+---
+
+## Viewing File Contents
+
+### `cat` — Concatenate & Print
+
+```bash
+cat file.txt                    # print entire file
+cat file1.txt file2.txt         # concatenate multiple files
+```
+
+### `less` / `more` — Paginated Viewing
+
+```bash
+less largefile.log              # scrollable viewer (q to quit)
+# Use / to search forward, ? to search backward, n for next match
+```
+
+### `head` / `tail`
+
+```bash
+head -n 20 file.txt             # first 20 lines
+tail -n 50 file.txt             # last 50 lines
+tail -f app.log                 # follow file in real-time (great for logs)
+```
+
+---
+
+## Permissions & Ownership
+
+### `chmod` — Change Mode
+
+```bash
+chmod 755 script.sh             # rwxr-xr-x
+chmod +x script.sh              # add execute permission
+chmod -R 644 directory/         # recursive
+```
+
+| Number | Permission |
+|--------|-----------|
+| 7 | rwx (read + write + execute) |
+| 6 | rw- (read + write) |
+| 5 | r-x (read + execute) |
+| 4 | r-- (read only) |
+| 0 | --- (none) |
+
+### `chown` — Change Owner
+
+```bash
+chown user:group file.txt
+chown -R user:group directory/
+```
+
+---
+
+## sudo — Superuser Do
+
+Run a command as root (or another user).
+
+```bash
+sudo apt update                 # run as root
+sudo -u postgres psql           # run as specific user
+sudo !!                         # re-run last command with sudo
+sudo -i                         # open root shell
+```
+
+---
+
+## Environment & Shell
+
+### `export` — Set Environment Variable
+
+```bash
+export PATH="$PATH:/usr/local/go/bin"   # append to PATH
+export NODE_ENV=production              # set variable for child processes
+env                                     # list all environment variables
+```
+
+### `source` — Execute Script in Current Shell
+
+```bash
+source ~/.bashrc                # reload shell config
+source .env                     # load env vars into current session
+# equivalent shorthand:
+. ~/.bashrc
+```
+
+### `echo`
+
+```bash
+echo "Hello"                    # print text
+echo $HOME                      # print variable value
+echo $?                         # print exit code of last command
+```
+
+### `which` / `type`
+
+```bash
+which node                      # find binary location
+type cd                         # show if command is builtin/alias/function
+```
+
+---
+
+## Pipes & Redirection
+
+```bash
+# Pipe output of one command into another
+ls -la | grep ".log"
+
+# Redirect stdout to file
+echo "hello" > file.txt         # overwrite
+echo "world" >> file.txt        # append
+
+# Redirect stderr
+command 2> error.log            # stderr to file
+command &> all.log              # stdout + stderr to file
+
+# /dev/null — discard output
+command > /dev/null 2>&1        # silence everything
+```
+
+---
+
+## Process Management
+
+### `ps` — Process Status
+
+```bash
+ps aux                          # all running processes
+ps aux | grep node              # find specific process
+```
+
+### `kill` / `killall`
+
+```bash
+kill 12345                      # send SIGTERM to PID
+kill -9 12345                   # force kill (SIGKILL)
+killall node                    # kill all processes by name
+```
+
+### `&` and `jobs`
+
+```bash
+long_command &                  # run in background
+jobs                            # list background jobs
+fg %1                           # bring job 1 to foreground
+```
+
+---
+
+## Useful Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+C` | Kill running process |
+| `Ctrl+Z` | Suspend process (use `bg`/`fg` to resume) |
+| `Ctrl+D` | Exit shell / EOF |
+| `Ctrl+R` | Reverse search command history |
+| `Ctrl+L` | Clear terminal |
+| `!!` | Repeat last command |
+| `!$` | Last argument of previous command |

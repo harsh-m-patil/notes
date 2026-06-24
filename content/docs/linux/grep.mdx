@@ -1,0 +1,108 @@
+---
+title: grep — Search Text with Patterns
+description: Pattern matching and text searching across files and streams.
+---
+
+## Basic Usage
+
+```bash
+grep "error" app.log                    # search for "error" in file
+grep -i "error" app.log                 # case-insensitive
+grep -r "TODO" ./src                    # recursive search in directory
+grep -rn "TODO" ./src                   # with line numbers
+grep -v "debug" app.log                 # invert match (exclude lines)
+grep -c "error" app.log                 # count matches
+grep -l "config" *.json                 # list filenames with matches only
+```
+
+## Context Lines
+
+```bash
+grep -A 3 "panic" app.log              # 3 lines After match
+grep -B 2 "panic" app.log              # 2 lines Before match
+grep -C 5 "panic" app.log              # 5 lines of Context (before + after)
+```
+
+## Regular Expressions
+
+```bash
+# Extended regex (-E or egrep)
+grep -E "error|warn|fatal" app.log      # multiple patterns (OR)
+grep -E "^[0-9]{4}-" app.log            # lines starting with date-like pattern
+grep -E "\b(GET|POST|PUT)\b" access.log # word boundaries
+
+# Perl-compatible regex (-P) — not available on macOS default grep
+grep -P "\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}" access.log   # IP addresses
+```
+
+## Common Flags
+
+| Flag | Purpose |
+|------|---------|
+| `-i` | Case-insensitive |
+| `-r` / `-R` | Recursive |
+| `-n` | Show line numbers |
+| `-l` | Show only filenames |
+| `-L` | Show files that DON'T match |
+| `-w` | Match whole words only |
+| `-x` | Match whole lines only |
+| `-c` | Count matches per file |
+| `-v` | Invert match |
+| `-o` | Print only the matched portion |
+| `-q` | Quiet (exit code only — for scripting) |
+| `--include` | Filter files by pattern |
+| `--exclude-dir` | Skip directories |
+
+## Real-World Patterns
+
+```bash
+# Search only in specific file types
+grep -rn "useState" --include="*.tsx" ./src
+
+# Exclude node_modules
+grep -rn "API_KEY" --exclude-dir=node_modules .
+
+# Find all TODO/FIXME/HACK
+grep -rn -E "(TODO|FIXME|HACK)" ./src
+
+# Count errors per log file
+grep -rc "ERROR" /var/log/*.log
+
+# Extract emails from a file
+grep -oE "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" file.txt
+
+# Check if a pattern exists (scripting)
+if grep -q "ready" status.txt; then
+  echo "Service is ready"
+fi
+```
+
+## Piping with grep
+
+```bash
+# Filter process list
+ps aux | grep "[n]ode"                  # brackets trick avoids matching grep itself
+
+# Chain greps (AND logic)
+cat app.log | grep "ERROR" | grep "database"
+
+# Filter command output
+docker ps | grep -i "redis"
+history | grep "git push"
+env | grep -i proxy
+```
+
+## Alternatives
+
+| Tool | When to use |
+|------|-------------|
+| `ripgrep` (`rg`) | Faster, respects `.gitignore`, better defaults |
+| `ag` (Silver Searcher) | Fast, code-aware |
+| `ack` | Designed for source code |
+
+```bash
+# ripgrep equivalents (much faster for codebases)
+rg "TODO" ./src
+rg -t js "console.log"
+rg --no-ignore "secret"
+```

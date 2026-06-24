@@ -1,0 +1,216 @@
+---
+title: tmux — Terminal Multiplexer
+description: Persistent sessions, panes, windows, and workflow management.
+---
+
+## Why tmux
+
+- Sessions survive SSH disconnects
+- Split terminal into panes and windows
+- Pair programming (shared sessions)
+- Keep long-running processes alive without `nohup`
+
+---
+
+## Core Concepts
+
+| Concept | What it is |
+|---------|-----------|
+| **Session** | A collection of windows (persists after detach) |
+| **Window** | A full-screen tab within a session |
+| **Pane** | A split within a window |
+| **Prefix** | Key combo that signals tmux (default: `Ctrl+b`) |
+
+All tmux commands start with the **prefix** key, then the action key.
+
+---
+
+## Sessions
+
+```bash
+# Create
+tmux                                     # new unnamed session
+tmux new -s work                         # new named session
+
+# Detach (from inside tmux)
+# Prefix + d                             (Ctrl+b, then d)
+
+# List sessions
+tmux ls
+
+# Attach
+tmux attach                              # attach to last session
+tmux attach -t work                      # attach to named session
+tmux a -t work                           # shorthand
+
+# Kill
+tmux kill-session -t work
+tmux kill-server                         # kill everything
+```
+
+---
+
+## Windows (Tabs)
+
+All prefixed with `Ctrl+b`:
+
+| Key | Action |
+|-----|--------|
+| `c` | Create new window |
+| `n` | Next window |
+| `p` | Previous window |
+| `0-9` | Switch to window by number |
+| `,` | Rename current window |
+| `&` | Kill current window |
+| `w` | List all windows (interactive picker) |
+
+---
+
+## Panes (Splits)
+
+| Key | Action |
+|-----|--------|
+| `%` | Split vertically (left/right) |
+| `"` | Split horizontally (top/bottom) |
+| Arrow keys | Move between panes |
+| `z` | Toggle pane zoom (fullscreen) |
+| `x` | Kill current pane |
+| `{` / `}` | Swap pane position |
+| `Space` | Cycle through layouts |
+| `q` | Show pane numbers (then press number to switch) |
+
+### Resize Panes
+
+Hold `Prefix`, then hold arrow key. Or:
+
+```bash
+# From command mode (Prefix + :)
+resize-pane -D 10                        # down 10 rows
+resize-pane -U 5                         # up 5 rows
+resize-pane -L 10                        # left 10 cols
+resize-pane -R 10                        # right 10 cols
+```
+
+---
+
+## Copy Mode (Scrollback)
+
+| Key | Action |
+|-----|--------|
+| `[` | Enter copy mode (scroll with arrows/PgUp/PgDn) |
+| `q` | Exit copy mode |
+| `/` | Search forward (in copy mode) |
+| `?` | Search backward (in copy mode) |
+| `Space` | Start selection (in copy mode) |
+| `Enter` | Copy selection (in copy mode) |
+| `]` | Paste buffer |
+
+---
+
+## Command Mode
+
+`Prefix + :` opens the tmux command prompt:
+
+```
+# Examples
+:new-window -n logs
+:split-window -h
+:swap-window -t 0
+:set -g mouse on
+```
+
+---
+
+## Configuration (`~/.tmux.conf`)
+
+```bash
+# Better prefix (Ctrl+a like screen)
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+
+# Mouse support
+set -g mouse on
+
+# Start windows/panes at 1 (not 0)
+set -g base-index 1
+setw -g pane-base-index 1
+
+# Easier splits
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+
+# Vim-style pane navigation
+bind h select-pane -L
+bind j select-pane -D
+bind k select-pane -U
+bind l select-pane -R
+
+# Resize with Vim keys
+bind -r H resize-pane -L 5
+bind -r J resize-pane -D 5
+bind -r K resize-pane -U 5
+bind -r L resize-pane -R 5
+
+# Fast reload config
+bind r source-file ~/.tmux.conf \; display "Reloaded!"
+
+# Increase scrollback
+set -g history-limit 50000
+
+# Reduce escape delay (for Vim)
+set -sg escape-time 0
+
+# 256 colors
+set -g default-terminal "screen-256color"
+```
+
+Reload after editing: `tmux source-file ~/.tmux.conf`
+
+---
+
+## Common Workflows
+
+### Dev Layout (editor + server + logs)
+
+```bash
+tmux new -s dev
+# Window 1: code editor (already here)
+# Prefix + c → new window for server
+# Prefix + c → new window for logs
+# Prefix + , → rename each window
+```
+
+### Split Pane Layout
+
+```bash
+tmux new -s work
+# Prefix + % → vertical split (editor | terminal)
+# Prefix + " → horizontal split bottom pane (terminal | logs)
+# Prefix + z → zoom into any pane when you need full screen
+```
+
+### SSH + tmux (persist remote work)
+
+```bash
+ssh server
+tmux new -s deploy
+# ... do work ...
+# Prefix + d → detach
+# disconnect SSH, come back later:
+ssh server
+tmux a -t deploy                         # everything is still running
+```
+
+---
+
+## Quick Reference Card
+
+```
+Prefix = Ctrl+b (default)
+
+Sessions:  d=detach  $=rename  s=list
+Windows:   c=new  n/p=next/prev  ,=rename  &=kill  w=list
+Panes:     %=vsplit  "=hsplit  arrows=move  z=zoom  x=kill
+Copy:      [=enter  /=search  Space=select  Enter=copy  ]=paste
+```

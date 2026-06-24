@@ -1,0 +1,136 @@
+---
+title: lsof — List Open Files
+description: Inspect open files, network connections, and port usage on Linux/macOS.
+---
+
+Everything in Linux is a file — regular files, directories, sockets, pipes, devices. `lsof` shows what's currently open and by whom.
+
+## Find What's Using a Port
+
+The most common use case:
+
+```bash
+lsof -i :3000                           # what process is using port 3000
+lsof -i :8080                           # check if port 8080 is in use
+lsof -i TCP:80                          # TCP connections on port 80
+lsof -i UDP:53                          # UDP on port 53
+```
+
+**Kill a process hogging a port:**
+
+```bash
+lsof -ti :8080 | xargs kill -9
+# -t = terse (PID only), pipe to kill
+```
+
+## Network Connections
+
+```bash
+lsof -i -P -n                          # all network connections (fast)
+# -P = don't resolve port names
+# -n = don't resolve hostnames
+
+lsof -i TCP -s TCP:LISTEN              # only listening sockets
+lsof -i TCP -s TCP:ESTABLISHED         # only established connections
+lsof -i @192.168.1.1                   # connections to specific host
+lsof -i @192.168.1.1:22                # to specific host + port
+```
+
+## Files Opened by Process
+
+```bash
+lsof -p 12345                           # files opened by PID
+lsof -c node                            # files opened by processes named "node"
+lsof -c nginx                           # all files nginx has open
+```
+
+## Files Opened by User
+
+```bash
+lsof -u username                        # all files opened by user
+lsof -u ^root                           # files NOT opened by root
+```
+
+## Find Processes Using a File/Directory
+
+```bash
+lsof /var/log/syslog                    # who has this file open
+lsof +D /var/log                        # all open files in directory (non-recursive)
+lsof +d /var/log                        # same but only top level
+```
+
+Useful when you can't unmount a filesystem:
+
+```bash
+lsof +D /mnt/usb                        # find what's keeping it busy
+```
+
+## Output Columns
+
+| Column | Meaning |
+|--------|---------|
+| COMMAND | Process name |
+| PID | Process ID |
+| USER | Owner |
+| FD | File descriptor (cwd, txt, mem, rtd, or number) |
+| TYPE | File type (REG, DIR, IPv4, IPv6, unix) |
+| DEVICE | Device numbers |
+| SIZE/OFF | File size or offset |
+| NODE | Inode number |
+| NAME | File path or socket address |
+
+## FD Column Values
+
+| Value | Meaning |
+|-------|---------|
+| cwd | Current working directory |
+| txt | Program text (binary) |
+| mem | Memory-mapped file |
+| 0u | stdin |
+| 1u | stdout |
+| 2u | stderr |
+| 3r | fd 3, read mode |
+| 4w | fd 4, write mode |
+| 5u | fd 5, read+write |
+
+## Combining Filters
+
+```bash
+# AND logic (both conditions must match)
+lsof -u deploy -i TCP:443              # user deploy AND port 443
+
+# OR logic (use -a to switch to AND, default is OR for some combos)
+lsof -a -u deploy -i TCP               # force AND
+```
+
+## Real-World Recipes
+
+```bash
+# "Address already in use" — find and kill
+lsof -ti :3000 | xargs kill -9
+
+# Find deleted files still held open (eating disk)
+lsof +L1
+# These files are deleted but space isn't freed until process closes them
+
+# Count open files per process
+lsof -u $(whoami) | awk '{print $1}' | sort | uniq -c | sort -rn | head
+
+# Check if a log file is being written to
+lsof /var/log/app.log
+
+# Find all network connections by a Java process
+lsof -i -a -c java
+
+# Watch for new connections (repeat)
+watch -n 1 'lsof -i TCP -s TCP:ESTABLISHED -P -n'
+```
+
+## macOS Notes
+
+On macOS, `lsof` works the same but some flags differ slightly. The most common commands above work identically. For listening ports specifically:
+
+```bash
+# macOS alternative (faster)
+sudo lsof -iTCP -sTCP:LISTEN -P -n
+```

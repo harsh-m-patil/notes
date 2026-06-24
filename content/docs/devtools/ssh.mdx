@@ -1,0 +1,236 @@
+---
+title: SSH — Secure Shell
+description: Remote access, key management, tunneling, config, and secure file transfers.
+---
+
+## Basic Connection
+
+```bash
+ssh user@hostname                        # connect
+ssh user@192.168.1.50                    # by IP
+ssh -p 2222 user@host                   # custom port
+ssh user@host "ls -la /var/log"         # run command without interactive shell
+```
+
+---
+
+## SSH Keys
+
+Keys are more secure than passwords and enable passwordless login.
+
+### Generate Key Pair
+
+```bash
+ssh-keygen -t ed25519 -C "you@example.com"
+# Saves to: ~/.ssh/id_ed25519 (private) and ~/.ssh/id_ed25519.pub (public)
+
+# RSA alternative (wider compatibility)
+ssh-keygen -t rsa -b 4096 -C "you@example.com"
+```
+
+### Copy Public Key to Server
+
+```bash
+ssh-copy-id user@host                    # easiest way
+# Or manually:
+cat ~/.ssh/id_ed25519.pub | ssh user@host "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+```
+
+### SSH Agent (avoid retyping passphrase)
+
+```bash
+eval "$(ssh-agent -s)"                   # start agent
+ssh-add ~/.ssh/id_ed25519                # add key
+ssh-add -l                               # list loaded keys
+ssh-add -D                               # remove all keys from agent
+```
+
+---
+
+## SSH Config (`~/.ssh/config`)
+
+Avoid typing long commands repeatedly:
+
+```bash
+# ~/.ssh/config
+Host dev
+    HostName 192.168.1.50
+    User deploy
+    Port 2222
+    IdentityFile ~/.ssh/id_ed25519
+
+Host prod
+    HostName prod.example.com
+    User admin
+    IdentityFile ~/.ssh/id_prod
+
+Host github.com
+    IdentityFile ~/.ssh/id_github
+    AddKeysToAgent yes
+
+# Wildcard defaults
+Host *
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+    AddKeysToAgent yes
+    IdentitiesOnly yes
+```
+
+Now just: `ssh dev` instead of `ssh -p 2222 deploy@192.168.1.50`
+
+---
+
+## Port Forwarding / Tunneling
+
+### Local Forward (access remote service locally)
+
+```bash
+# Access remote DB (port 5432) via localhost:5433
+ssh -L 5433:localhost:5432 user@dbserver
+
+# Access internal service through bastion
+ssh -L 8080:internal-api:80 user@bastion
+# Now: curl http://localhost:8080
+```
+
+### Remote Forward (expose local service to remote)
+
+```bash
+# Let remote server access your local dev server
+ssh -R 9090:localhost:3000 user@remote
+# On remote: curl http://localhost:9090 → hits your local :3000
+```
+
+### Dynamic Forward (SOCKS proxy)
+
+```bash
+ssh -D 1080 user@host
+# Configure browser/apps to use SOCKS5 proxy at localhost:1080
+# All traffic routes through the remote host
+```
+
+### Flags
+
+| Flag | Purpose |
+|------|---------|
+| `-L local:remote:port` | Local port forward |
+| `-R remote:local:port` | Remote port forward |
+| `-D port` | Dynamic SOCKS proxy |
+| `-N` | No remote command (just tunnel) |
+| `-f` | Background after auth |
+
+```bash
+# Background tunnel (common pattern)
+ssh -fNL 5433:localhost:5432 user@dbserver
+```
+
+---
+
+## Jump Hosts (Bastion/Proxy)
+
+```bash
+# Connect through a bastion
+ssh -J bastion@jump.example.com user@internal-server
+
+# In config:
+Host internal
+    HostName 10.0.1.50
+    User deploy
+    ProxyJump bastion
+
+Host bastion
+    HostName jump.example.com
+    User bastion
+```
+
+---
+
+## File Transfer
+
+### SCP (simple copy)
+
+```bash
+scp file.txt user@host:/remote/path/     # upload
+scp user@host:/remote/file.txt ./        # download
+scp -r ./dir user@host:/remote/          # recursive (directory)
+scp -P 2222 file.txt user@host:/path/   # custom port
+```
+
+### rsync (better for large/repeated transfers)
+
+```bash
+rsync -avz ./src/ user@host:/dest/       # sync directory
+rsync -avz --delete ./src/ user@host:/dest/   # sync + delete extra files on remote
+rsync -avz -e "ssh -p 2222" ./src/ user@host:/dest/   # custom SSH port
+rsync --progress large-file.iso user@host:/data/   # show progress
+```
+
+| rsync flag | Meaning |
+|-----------|---------|
+| `-a` | Archive (recursive, preserves perms/times) |
+| `-v` | Verbose |
+| `-z` | Compress during transfer |
+| `--delete` | Remove files on dest not in source |
+| `--dry-run` | Show what would happen |
+| `--exclude` | Skip patterns |
+
+---
+
+## Security Best Practices
+
+```bash
+# On the server (/etc/ssh/sshd_config):
+PermitRootLogin no                       # disable root SSH
+PasswordAuthentication no                # keys only
+Port 2222                                # non-default port
+AllowUsers deploy admin                  # whitelist users
+MaxAuthTries 3
+```
+
+```bash
+# Fix permissions (SSH is strict about this)
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/id_ed25519              # private key
+chmod 644 ~/.ssh/id_ed25519.pub          # public key
+chmod 600 ~/.ssh/config
+chmod 600 ~/.ssh/authorized_keys
+```
+
+---
+
+## Troubleshooting
+
+```bash
+# Verbose connection (debug)
+ssh -v user@host                         # level 1
+ssh -vvv user@host                       # level 3 (max detail)
+
+# Test connection without shell
+ssh -T git@github.com                    # test GitHub SSH
+
+# Check what key is being offered
+ssh -v user@host 2>&1 | grep "Offering"
+
+# Agent forwarding (use local keys on remote)
+ssh -A user@bastion                      # then ssh from bastion uses your keys
+# In config: ForwardAgent yes
+```
+
+---
+
+## Common Patterns
+
+```bash
+# Persistent tunnel as a service (keep-alive)
+autossh -M 0 -fNL 5433:localhost:5432 user@dbserver
+
+# Mount remote filesystem (SSHFS)
+sshfs user@host:/remote/path /local/mount
+fusermount -u /local/mount               # unmount
+
+# Run local script on remote
+ssh user@host < ./setup.sh
+
+# Tar + SSH (transfer directory without scp)
+tar czf - ./mydir | ssh user@host "tar xzf - -C /dest"
+```

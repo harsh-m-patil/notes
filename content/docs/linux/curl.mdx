@@ -1,0 +1,177 @@
+---
+title: curl — Transfer Data via URLs
+description: HTTP client for APIs, debugging, file transfers, and automation.
+---
+
+## Basic Requests
+
+```bash
+# GET (default)
+curl https://api.example.com/users
+
+# Explicit method
+curl -X GET https://api.example.com/users
+curl -X POST https://api.example.com/users
+curl -X PUT https://api.example.com/users/1
+curl -X PATCH https://api.example.com/users/1
+curl -X DELETE https://api.example.com/users/1
+```
+
+## Headers
+
+```bash
+# Set headers
+curl -H "Authorization: Bearer TOKEN" \
+     -H "Accept: application/json" \
+     https://api.example.com/me
+
+# Show response headers
+curl -I https://example.com                  # HEAD request (headers only)
+curl -i https://example.com                  # include headers in output
+```
+
+## Sending Data
+
+```bash
+# POST JSON
+curl -X POST https://api.example.com/users \
+  -H "Content-Type: application/json" \
+  -d '{"name": "John", "email": "john@example.com"}'
+
+# POST from file
+curl -X POST https://api.example.com/import \
+  -H "Content-Type: application/json" \
+  -d @payload.json
+
+# Form data
+curl -X POST https://example.com/login \
+  -d "username=admin&password=secret"
+
+# Multipart file upload
+curl -X POST -F "file=@document.pdf" \
+     -F "description=My doc" \
+     https://api.example.com/upload
+```
+
+## Output Control
+
+```bash
+# Save to file
+curl -o output.json https://api.example.com/data
+curl -O https://example.com/file.tar.gz         # save with remote filename
+
+# Silent mode (no progress bar)
+curl -s https://api.example.com/data
+
+# Silent + show errors
+curl -sS https://api.example.com/data
+
+# Pipe to jq
+curl -sS https://api.example.com/data | jq .
+
+# Write HTTP status code only
+curl -o /dev/null -s -w "%{http_code}\n" https://example.com
+```
+
+## Debugging
+
+```bash
+# Verbose (full request/response with TLS)
+curl -v https://api.example.com/health
+
+# Timing breakdown
+curl -o /dev/null -s -w "DNS: %{time_namelookup}s\nConnect: %{time_connect}s\nTLS: %{time_appconnect}s\nTotal: %{time_total}s\n" https://example.com
+
+# Trace (even more detail than -v)
+curl --trace-ascii - https://example.com
+```
+
+## Timeouts & Retries
+
+```bash
+# Connection timeout + total timeout
+curl --connect-timeout 5 --max-time 30 https://api.example.com/slow
+
+# Retry on failure
+curl --retry 3 --retry-delay 2 https://api.example.com/flaky
+
+# Retry on specific HTTP codes
+curl --retry 3 --retry-all-errors https://api.example.com/data
+```
+
+## Authentication
+
+```bash
+# Basic auth
+curl -u username:password https://api.example.com/admin
+
+# Bearer token
+curl -H "Authorization: Bearer eyJhbG..." https://api.example.com/me
+
+# Netrc file (store credentials)
+curl -n https://api.example.com/me      # reads ~/.netrc
+```
+
+## Redirects & Cookies
+
+```bash
+# Follow redirects
+curl -L https://short.url/abc
+
+# Maximum redirects
+curl -L --max-redirs 5 https://example.com
+
+# Save cookies
+curl -c cookies.txt https://example.com/login -d "user=admin&pass=secret"
+
+# Send cookies
+curl -b cookies.txt https://example.com/dashboard
+
+# Cookie jar (save + send in one)
+curl -b cookies.txt -c cookies.txt https://example.com/page
+```
+
+## Useful Flag Reference
+
+| Flag | Purpose |
+|------|---------|
+| `-X` | HTTP method |
+| `-H` | Add header |
+| `-d` | Send data (POST body) |
+| `-F` | Multipart form data |
+| `-o` | Output to file |
+| `-O` | Save with remote filename |
+| `-s` | Silent |
+| `-S` | Show error even in silent mode |
+| `-i` | Include response headers |
+| `-I` | HEAD request only |
+| `-v` | Verbose |
+| `-L` | Follow redirects |
+| `-u` | Basic auth credentials |
+| `-k` | Skip TLS verification (insecure) |
+| `-w` | Custom output format |
+| `--compressed` | Request compressed response |
+
+## Real-World Recipes
+
+```bash
+# Health check script
+curl -sf https://myapp.com/health || echo "DOWN"
+
+# Download with progress bar
+curl --progress-bar -O https://example.com/large.iso
+
+# API pagination loop
+PAGE=1
+while true; do
+  RESPONSE=$(curl -s "https://api.example.com/items?page=$PAGE")
+  echo "$RESPONSE" | jq '.items[]'
+  NEXT=$(echo "$RESPONSE" | jq -r '.next')
+  [ "$NEXT" = "null" ] && break
+  PAGE=$((PAGE + 1))
+done
+
+# Compare response times
+curl -s -o /dev/null -w "%{time_total}" https://api-v1.example.com
+curl -s -o /dev/null -w "%{time_total}" https://api-v2.example.com
+```

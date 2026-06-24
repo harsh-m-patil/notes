@@ -1,0 +1,194 @@
+---
+title: Utilities
+description: Handy Linux commands for process management, networking, compression, and workflow automation.
+---
+
+## nohup — Run After Terminal Closes
+
+```bash
+nohup long_running_script.sh &                  # output to nohup.out
+nohup node server.js > app.log 2>&1 &           # custom output file
+disown                                           # detach already-running process
+```
+
+**Better alternatives for persistent sessions:** `tmux` or `screen`.
+
+---
+
+## xargs — Build Commands from Input
+
+```bash
+find . -name "*.log" | xargs rm                    # delete found files
+find . -name "*.js" | xargs grep "console.log"     # search in found files
+echo "1 2 3 4" | xargs -n 2 echo                   # batch: 2 args per invocation
+cat urls.txt | xargs -P 4 -I {} curl -s {}         # parallel (4 at a time)
+find . -name "*.txt" -print0 | xargs -0 wc -l      # null-delimited (safe for spaces)
+```
+
+| Flag | Purpose |
+|------|---------|
+| `-n N` | Max N arguments per command |
+| `-P N` | Run N processes in parallel |
+| `-I {}` | Replace `{}` with input |
+| `-0` | Null delimiter (pair with `find -print0`) |
+| `-t` | Print commands before executing (debug) |
+
+---
+
+## watch — Repeat Commands
+
+```bash
+watch -n 2 'df -h'                      # run every 2 seconds
+watch -d 'ls -la'                       # highlight differences
+watch -n 1 'kubectl get pods'           # monitor k8s pods
+```
+
+---
+
+## tee — Split Output
+
+Write to file AND stdout simultaneously:
+
+```bash
+command | tee output.log                 # write + display
+command | tee -a output.log              # append mode
+command 2>&1 | tee debug.log             # capture stderr too
+```
+
+---
+
+## wc — Word/Line/Byte Count
+
+```bash
+wc -l file.txt                           # line count
+wc -w file.txt                           # word count
+wc -c file.txt                           # byte count
+find . -name "*.py" | xargs wc -l | tail -1    # total lines of Python
+```
+
+---
+
+## sort & uniq — Sorting and Deduplication
+
+```bash
+sort file.txt                            # alphabetical sort
+sort -n file.txt                         # numeric sort
+sort -r file.txt                         # reverse
+sort -k2 -t',' data.csv                  # sort by 2nd column (comma-delimited)
+sort -u file.txt                         # sort + deduplicate
+
+uniq file.txt                            # remove adjacent duplicates (sort first!)
+sort file.txt | uniq -c                  # count occurrences
+sort file.txt | uniq -d                  # show only duplicates
+```
+
+---
+
+## cut — Extract Columns
+
+```bash
+cut -d',' -f2 data.csv                   # 2nd field (comma delimiter)
+cut -d':' -f1 /etc/passwd                # usernames
+cut -c1-10 file.txt                      # first 10 characters per line
+cut -d' ' -f1,3 file.txt                 # fields 1 and 3
+```
+
+---
+
+## tr — Translate/Delete Characters
+
+```bash
+echo "HELLO" | tr 'A-Z' 'a-z'           # lowercase
+echo "hello" | tr 'a-z' 'A-Z'           # uppercase
+echo "hello   world" | tr -s ' '        # squeeze repeated spaces
+echo "hello123" | tr -d '0-9'           # delete digits
+cat file.txt | tr '\t' ','              # tabs to commas
+```
+
+---
+
+## Disk & System
+
+```bash
+df -h                                    # disk usage (filesystem level)
+du -sh ./node_modules                    # directory size
+du -h --max-depth=1 . | sort -rh        # largest subdirectories
+free -h                                  # memory usage (Linux)
+top                                      # process monitor
+htop                                     # better top (interactive)
+uname -a                                 # system info
+uptime                                   # uptime + load average
+whoami                                   # current user
+hostname                                 # machine name
+```
+
+---
+
+## Networking Quick Reference
+
+```bash
+ping -c 4 google.com                     # connectivity check
+nslookup example.com                     # DNS lookup
+dig example.com +short                   # DNS (more detail)
+ss -tulnp                                # listening ports (modern)
+netstat -tulnp                           # listening ports (legacy)
+ip addr show                             # network interfaces
+traceroute example.com                   # trace packet path
+wget -c https://example.com/file.iso     # download (resumable)
+```
+
+---
+
+## Compression
+
+```bash
+# tar
+tar -czf archive.tar.gz ./dir           # create gzipped tar
+tar -xzf archive.tar.gz                 # extract
+tar -xzf archive.tar.gz -C /dest/       # extract to directory
+tar -tf archive.tar.gz                   # list contents
+
+# zip
+zip -r archive.zip ./dir
+unzip archive.zip
+unzip -l archive.zip                     # list contents
+
+# gzip (single file)
+gzip file.txt                            # compress (removes original)
+gunzip file.txt.gz                       # decompress
+zcat file.txt.gz                         # view without decompressing
+```
+
+---
+
+## Chaining & Control Flow
+
+```bash
+cmd1 ; cmd2                              # sequential (always)
+cmd1 && cmd2                             # AND (only if cmd1 succeeds)
+cmd1 || cmd2                             # OR (only if cmd1 fails)
+mkdir build && cd build || echo "Failed"
+
+# Subshell (isolated)
+(cd /tmp && ls)                          # doesn't affect parent shell
+
+# Command substitution
+echo "Today is $(date +%Y-%m-%d)"
+FILES=$(find . -name "*.log" | wc -l)
+```
+
+---
+
+## Aliases (add to ~/.bashrc or ~/.zshrc)
+
+```bash
+alias ll='ls -lah'
+alias gs='git status'
+alias dc='docker compose'
+alias ports='lsof -i -P -n | grep LISTEN'
+alias cls='clear'
+alias ..='cd ..'
+alias ...='cd ../..'
+```
+
+Reload after editing: `source ~/.zshrc`

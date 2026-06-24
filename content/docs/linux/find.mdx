@@ -1,0 +1,183 @@
+---
+title: find — Search for Files
+description: Locate files and directories by name, type, size, time, and execute actions on results.
+---
+
+## Basic Syntax
+
+```bash
+find [path] [conditions] [actions]
+```
+
+## Find by Name
+
+```bash
+find . -name "*.log"                     # exact glob match (case-sensitive)
+find . -iname "*.LOG"                    # case-insensitive
+find / -name "nginx.conf"               # search from root
+find . -name "*.js" -o -name "*.ts"     # OR — multiple patterns
+```
+
+## Find by Type
+
+```bash
+find . -type f                           # files only
+find . -type d                           # directories only
+find . -type l                           # symbolic links
+find . -type f -name "*.md"             # combine type + name
+```
+
+| Type | Meaning |
+|------|---------|
+| `f` | Regular file |
+| `d` | Directory |
+| `l` | Symbolic link |
+| `s` | Socket |
+| `p` | Named pipe |
+
+## Find by Size
+
+```bash
+find . -size +100M                       # larger than 100MB
+find . -size -1k                         # smaller than 1KB
+find . -size +10M -size -100M           # between 10MB and 100MB
+find . -empty                            # empty files or directories
+```
+
+Size suffixes: `c` (bytes), `k` (KB), `M` (MB), `G` (GB)
+
+## Find by Time
+
+```bash
+find . -mtime -1                         # modified in last 24 hours
+find . -mtime +30                        # modified more than 30 days ago
+find . -mmin -60                         # modified in last 60 minutes
+find . -atime -7                         # accessed in last 7 days
+find . -newer reference.txt             # newer than reference file
+```
+
+| Flag | Meaning |
+|------|---------|
+| `-mtime` | Modification time (days) |
+| `-mmin` | Modification time (minutes) |
+| `-atime` | Access time (days) |
+| `-amin` | Access time (minutes) |
+| `-ctime` | Change time — metadata (days) |
+
+## Find by Permissions & Ownership
+
+```bash
+find . -perm 755                         # exact permissions
+find . -perm -u+x                        # user has execute
+find . -perm /u+x                        # anyone has execute (OR logic)
+find . -user deploy                      # owned by user
+find . -group www-data                   # owned by group
+find . -nouser                           # no matching user in system
+```
+
+## Excluding Paths
+
+```bash
+# Exclude directory
+find . -name "*.js" -not -path "*/node_modules/*"
+find . -name "*.js" -not -path "*/.git/*" -not -path "*/node_modules/*"
+
+# Prune (more efficient — stops descending)
+find . -path ./node_modules -prune -o -name "*.js" -print
+```
+
+## Actions
+
+### `-print` (default)
+
+```bash
+find . -name "*.log" -print             # one per line (default)
+find . -name "*.log" -print0            # null-separated (safe for filenames with spaces)
+```
+
+### `-delete`
+
+```bash
+find . -name "*.tmp" -delete            # delete matching files
+find . -empty -type d -delete           # remove empty directories
+```
+
+### `-exec`
+
+```bash
+# Run command on each result
+find . -name "*.sh" -exec chmod +x {} \;
+
+# {} = placeholder for filename
+# \; = end of command (one invocation per file)
+# + = batch mode (like xargs)
+
+find . -name "*.log" -exec rm {} +      # faster (batches arguments)
+find . -name "*.js" -exec grep -l "TODO" {} +
+find . -type f -mtime +30 -exec mv {} /archive/ \;
+```
+
+### Pipe to `xargs`
+
+```bash
+find . -name "*.log" | xargs rm
+find . -name "*.log" -print0 | xargs -0 rm      # safe for spaces in names
+find . -name "*.ts" | xargs grep "interface"
+```
+
+## Depth Control
+
+```bash
+find . -maxdepth 1 -type f              # current directory only (no recursion)
+find . -maxdepth 2 -name "*.json"       # at most 2 levels deep
+find . -mindepth 2 -name "*.json"       # skip top-level matches
+```
+
+## Real-World Recipes
+
+```bash
+# Find large files eating disk space
+find / -type f -size +500M 2>/dev/null | head -20
+
+# Clean old logs
+find /var/log -name "*.log" -mtime +90 -delete
+
+# Find recently modified config files
+find /etc -name "*.conf" -mmin -60
+
+# Find broken symlinks
+find . -type l ! -exec test -e {} \; -print
+
+# Find duplicate filenames
+find . -type f | awk -F/ '{print $NF}' | sort | uniq -d
+
+# Count files by extension
+find . -type f | sed 's/.*\.//' | sort | uniq -c | sort -rn | head
+
+# Find files not owned by expected user (security)
+find /var/www -not -user www-data -type f
+
+# Find world-writable files
+find / -type f -perm -002 2>/dev/null
+
+# Batch rename (e.g., .txt to .md)
+find . -name "*.txt" -exec sh -c 'mv "$1" "${1%.txt}.md"' _ {} \;
+
+# Find and archive old files
+find ./uploads -mtime +365 -exec tar -rvf archive.tar {} +
+```
+
+## `find` vs Alternatives
+
+| Tool | Best for |
+|------|----------|
+| `find` | Universal, precise control, available everywhere |
+| `fd` | Faster, simpler syntax, respects `.gitignore` |
+| `locate` | Instant (pre-built index), less precise |
+
+```bash
+# fd equivalents (if installed)
+fd "\.log$"                             # find *.log
+fd -t f -e js                           # find .js files
+fd -H "secret"                          # include hidden files
+```

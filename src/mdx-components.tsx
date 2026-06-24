@@ -17,6 +17,10 @@ import {
   SyncAsyncLab,
 } from "@/components/mdx/interactive-diagrams";
 import { Mermaid } from "@/components/mdx/mermaid";
+import {
+  OSIEncapsulationDiagram,
+  OSIFlowDiagram,
+} from "@/components/mdx/osi-diagram";
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
@@ -34,6 +38,8 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     StatefulSessionLab,
     SyncAsyncLab,
     SidecarFlowLab,
+    OSIEncapsulationDiagram,
+    OSIFlowDiagram,
     ...TabsComponents,
     ...AccordianComponents,
     ...components,

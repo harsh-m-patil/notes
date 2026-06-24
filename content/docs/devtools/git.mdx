@@ -1,0 +1,208 @@
+---
+title: git — Version Control
+description: Essential git commands for daily development, branching, history, and recovery.
+---
+
+## Configuration
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+git config --global init.defaultBranch main
+git config --global pull.rebase true            # rebase by default on pull
+git config --global alias.co checkout
+git config --global alias.br branch
+git config --global alias.st status
+git config --list                                # view all config
+```
+
+## Daily Workflow
+
+```bash
+git status                              # what's changed
+git diff                                # unstaged changes
+git diff --staged                       # staged changes (about to commit)
+git diff HEAD~1                         # changes since last commit
+git add file.txt                        # stage specific file
+git add -p                              # interactive staging (hunk by hunk)
+git add .                               # stage everything
+git commit -m "feat: add login"         # commit with message
+git push origin main                    # push to remote
+git pull --rebase origin main           # pull with rebase (cleaner history)
+```
+
+## Branching
+
+```bash
+git branch                              # list local branches
+git branch -a                           # list all (including remote)
+git branch feature/auth                 # create branch
+git checkout feature/auth               # switch to branch
+git checkout -b feature/auth            # create + switch (shorthand)
+git switch feature/auth                 # modern switch
+git switch -c feature/auth              # modern create + switch
+
+# Merge
+git merge feature/auth                  # merge into current branch
+git merge --no-ff feature/auth          # force merge commit (no fast-forward)
+
+# Rebase
+git rebase main                         # rebase current branch onto main
+git rebase -i HEAD~3                    # interactive rebase (squash, reorder, edit)
+
+# Delete
+git branch -d feature/auth             # delete merged branch
+git branch -D feature/auth             # force delete unmerged branch
+git push origin --delete feature/auth   # delete remote branch
+```
+
+## Stashing
+
+```bash
+git stash                               # stash uncommitted changes
+git stash -m "work in progress"         # with message
+git stash list                          # view all stashes
+git stash pop                           # apply + remove latest stash
+git stash apply stash@{2}              # apply specific stash (keep it)
+git stash drop stash@{0}               # delete specific stash
+git stash clear                         # delete all stashes
+git stash -u                            # include untracked files
+```
+
+## History & Inspection
+
+```bash
+git log --oneline --graph -20           # compact visual history
+git log --oneline --all --graph         # all branches
+git log --author="John"                 # filter by author
+git log --since="1 week ago"            # filter by date
+git log --grep="fix"                    # search commit messages
+git log -p file.txt                     # history of changes to specific file
+git log --stat                          # show files changed per commit
+
+git show abc123                         # view specific commit
+git blame file.txt                      # who changed each line and when
+git shortlog -sn                        # commit count by author
+```
+
+## Undoing Things
+
+```bash
+# Amend last commit (add files or change message)
+git commit --amend
+git commit --amend -m "new message"
+
+# Unstage a file
+git restore --staged file.txt           # modern
+git reset HEAD file.txt                 # legacy
+
+# Discard working changes
+git restore file.txt                    # modern
+git checkout -- file.txt                # legacy
+
+# Undo last commit (keep changes)
+git reset --soft HEAD~1                 # changes stay staged
+git reset --mixed HEAD~1                # changes stay unstaged (default)
+git reset --hard HEAD~1                 # discard changes entirely
+
+# Revert a commit (safe for shared branches)
+git revert abc123                       # creates new commit that undoes it
+
+# Nuclear option: discard everything
+git reset --hard origin/main            # reset to remote state
+git clean -fd                           # remove untracked files/dirs
+```
+
+## Cherry-Pick & Bisect
+
+```bash
+# Apply specific commit to current branch
+git cherry-pick abc123
+git cherry-pick abc123 def456           # multiple commits
+
+# Binary search for a bug
+git bisect start
+git bisect bad                          # current commit is bad
+git bisect good abc123                  # this commit was good
+# git tests commits between, you mark each as good/bad
+git bisect reset                        # done, return to original state
+
+# Automated bisect
+git bisect start HEAD abc123
+git bisect run npm test                 # auto-run test to find bad commit
+```
+
+## Reflog — Your Safety Net
+
+The reflog tracks every HEAD movement. Use it to recover "lost" commits.
+
+```bash
+git reflog                              # show recent HEAD changes
+git reflog show feature/auth            # for specific branch
+
+# Recover after bad reset
+git reflog
+# find the commit hash before the reset
+git reset --hard abc123                 # restore to that point
+```
+
+## Remote Operations
+
+```bash
+git remote -v                           # list remotes
+git remote add upstream https://...     # add another remote
+git fetch origin                        # download without merging
+git fetch --prune                       # clean up deleted remote branches
+
+# Track remote branch
+git checkout --track origin/feature     # create local tracking branch
+
+# Push new branch
+git push -u origin feature/auth         # -u sets upstream tracking
+
+# Force push (after rebase — use with care)
+git push --force-with-lease             # safer than --force
+```
+
+## Useful Tricks
+
+```bash
+# See what will be pushed
+git log origin/main..HEAD
+
+# Find which commit introduced a string
+git log -S "function_name" --oneline
+
+# Create patch
+git format-patch -1 HEAD                # last commit as patch file
+git am 0001-patch-name.patch            # apply patch
+
+# Worktrees (multiple checkouts)
+git worktree add ../hotfix hotfix-branch
+
+# Archive
+git archive --format=tar.gz HEAD > project.tar.gz
+
+# Clean merged branches
+git branch --merged main | grep -v main | xargs git branch -d
+```
+
+## `.gitignore` Patterns
+
+```bash
+node_modules/
+*.log
+.env
+.env.*
+dist/
+build/
+.DS_Store
+*.swp
+coverage/
+```
+
+```bash
+# Ignore already-tracked file
+git rm --cached file.txt                # stop tracking (keep local)
+git rm --cached -r dist/                # stop tracking directory
+```

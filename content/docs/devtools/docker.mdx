@@ -1,0 +1,293 @@
+---
+title: Docker
+description: Container lifecycle, images, networking, volumes, and Docker Compose.
+---
+
+## Core Concepts
+
+| Concept | What it is |
+|---------|-----------|
+| **Image** | Read-only template (blueprint) |
+| **Container** | Running instance of an image |
+| **Volume** | Persistent storage outside container |
+| **Network** | Communication between containers |
+| **Dockerfile** | Instructions to build an image |
+| **Registry** | Image storage (Docker Hub, ECR, GCR) |
+
+---
+
+## Container Lifecycle
+
+```bash
+# Run a container
+docker run nginx                         # foreground
+docker run -d nginx                      # detached (background)
+docker run -d --name web -p 8080:80 nginx   # named + port mapping
+docker run -it ubuntu bash               # interactive + TTY (shell access)
+docker run --rm alpine echo "hello"      # auto-remove after exit
+
+# List containers
+docker ps                                # running
+docker ps -a                             # all (including stopped)
+
+# Stop / Start / Restart
+docker stop web
+docker start web
+docker restart web
+
+# Remove
+docker rm web                            # remove stopped container
+docker rm -f web                         # force remove running container
+docker container prune                   # remove all stopped containers
+
+# Logs
+docker logs web                          # all logs
+docker logs -f web                       # follow (like tail -f)
+docker logs --tail 50 web                # last 50 lines
+docker logs --since 1h web               # last hour
+
+# Execute in running container
+docker exec -it web bash                 # shell into container
+docker exec web cat /etc/nginx/nginx.conf   # run single command
+
+# Inspect
+docker inspect web                       # full JSON details
+docker inspect web | jq '.[0].NetworkSettings.IPAddress'
+docker stats                             # live resource usage
+docker top web                           # processes inside container
+```
+
+---
+
+## Images
+
+```bash
+# Pull / Push
+docker pull nginx:1.25
+docker push myregistry/myapp:v1.0
+
+# List images
+docker images
+docker images --format "{{.Repository}}:{{.Tag}} {{.Size}}"
+
+# Build
+docker build -t myapp:v1 .              # build from Dockerfile in current dir
+docker build -t myapp:v1 -f Dockerfile.prod .   # specific Dockerfile
+docker build --no-cache -t myapp:v1 .   # ignore cache
+
+# Tag
+docker tag myapp:v1 myregistry/myapp:v1
+docker tag myapp:v1 myapp:latest
+
+# Remove
+docker rmi nginx:1.25
+docker image prune                       # remove dangling images
+docker image prune -a                    # remove all unused images
+
+# History (see layers)
+docker history myapp:v1
+```
+
+---
+
+## Dockerfile
+
+```dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies (cached layer)
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy source
+COPY . .
+
+# Build
+RUN npm run build
+
+# Runtime config
+ENV NODE_ENV=production
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# Start
+CMD ["node", "dist/index.js"]
+```
+
+### Multi-stage Build (smaller images)
+
+```dockerfile
+# Build stage
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Production stage
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+CMD ["node", "dist/index.js"]
+```
+
+### Best Practices
+
+- Order layers from least → most frequently changing (caching)
+- Use `.dockerignore` to exclude `node_modules`, `.git`, etc.
+- Prefer `COPY` over `ADD` (explicit behavior)
+- Use specific image tags, not `latest`
+- One process per container
+- Use `npm ci` over `npm install` in builds
+
+---
+
+## Volumes
+
+```bash
+# Named volume (managed by Docker)
+docker run -d -v mydata:/var/lib/mysql mysql
+
+# Bind mount (host directory)
+docker run -d -v $(pwd)/src:/app/src myapp
+
+# List volumes
+docker volume ls
+docker volume inspect mydata
+docker volume rm mydata
+docker volume prune                      # remove unused volumes
+```
+
+---
+
+## Networking
+
+```bash
+# List networks
+docker network ls
+
+# Create custom network
+docker network create mynet
+
+# Run on custom network
+docker run -d --name api --network mynet myapp
+docker run -d --name db --network mynet postgres
+# containers on same network can reach each other by name: ping db
+
+# Connect running container to network
+docker network connect mynet existing-container
+
+# Port mapping
+docker run -p 8080:80 nginx             # host:container
+docker run -p 127.0.0.1:8080:80 nginx   # bind to localhost only
+docker run -P nginx                      # map all exposed ports to random
+```
+
+---
+
+## Docker Compose
+
+### `docker-compose.yml`
+
+```yaml
+services:
+  api:
+    build: ./api
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://user:pass@db:5432/mydb
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./api/src:/app/src    # dev hot-reload
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: mydb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:
+```
+
+### Commands
+
+```bash
+docker compose up                        # start all services
+docker compose up -d                     # detached
+docker compose up --build                # rebuild images first
+docker compose down                      # stop and remove containers
+docker compose down -v                   # also remove volumes
+docker compose logs -f api               # follow logs for one service
+docker compose exec api sh               # shell into running service
+docker compose ps                        # list running services
+docker compose restart api               # restart one service
+docker compose pull                      # pull latest images
+docker compose build --no-cache          # rebuild without cache
+```
+
+---
+
+## Cleanup
+
+```bash
+# Remove everything unused (nuclear option)
+docker system prune -a --volumes
+
+# Selective cleanup
+docker container prune                   # stopped containers
+docker image prune -a                    # unused images
+docker volume prune                      # unused volumes
+docker network prune                     # unused networks
+
+# Check disk usage
+docker system df
+```
+
+---
+
+## Useful Patterns
+
+```bash
+# Copy file from container
+docker cp web:/etc/nginx/nginx.conf ./nginx.conf
+
+# Copy file into container
+docker cp ./config.json web:/app/config.json
+
+# Run one-off command (disposable container)
+docker run --rm -v $(pwd):/data alpine sh -c "tar czf /data/backup.tar.gz /data/src"
+
+# Debug a crashed container
+docker run -it --entrypoint sh myapp     # override entrypoint
+
+# See what changed in container filesystem
+docker diff web
+
+# Export/Import (without registry)
+docker save myapp:v1 > myapp.tar
+docker load < myapp.tar
+```

@@ -1,0 +1,293 @@
+---
+title: gh — GitHub CLI
+description: Manage PRs, issues, repos, and workflows from the terminal.
+---
+
+## Setup
+
+```bash
+# Install
+brew install gh                          # macOS
+sudo apt install gh                      # Ubuntu/Debian
+
+# Authenticate
+gh auth login                            # interactive (browser or token)
+gh auth status                           # check auth state
+gh auth logout
+```
+
+---
+
+## Pull Requests
+
+### Create
+
+```bash
+gh pr create                             # interactive
+gh pr create --title "feat: add auth" --body "Description here"
+gh pr create --fill                      # auto-fill from commit messages
+gh pr create --draft                     # create as draft
+gh pr create --base main --head feature  # explicit branches
+gh pr create --reviewer @user1,@user2
+gh pr create --label "bug,priority"
+```
+
+### View & List
+
+```bash
+gh pr list                               # your repo's open PRs
+gh pr list --state all                   # include closed/merged
+gh pr list --author @me                  # only yours
+gh pr list --search "is:open review-requested:@me"
+
+gh pr view 42                            # view PR #42
+gh pr view 42 --web                      # open in browser
+gh pr view --web                         # current branch's PR in browser
+gh pr diff 42                            # show diff
+```
+
+### Review & Merge
+
+```bash
+gh pr checkout 42                        # checkout PR branch locally
+gh pr review 42 --approve
+gh pr review 42 --request-changes --body "Fix the tests"
+gh pr review 42 --comment --body "Looks good overall"
+
+gh pr merge 42                           # interactive merge method
+gh pr merge 42 --squash                  # squash merge
+gh pr merge 42 --rebase                  # rebase merge
+gh pr merge 42 --merge                   # merge commit
+gh pr merge 42 --auto --squash          # auto-merge when checks pass
+gh pr merge --delete-branch              # delete branch after merge
+```
+
+### Edit
+
+```bash
+gh pr edit 42 --title "new title"
+gh pr edit 42 --add-label "urgent"
+gh pr edit 42 --add-reviewer @user
+gh pr ready 42                           # mark draft as ready
+```
+
+---
+
+## Issues
+
+```bash
+# Create
+gh issue create                          # interactive
+gh issue create --title "Bug: login fails" --body "Steps to reproduce..."
+gh issue create --label "bug" --assignee @me
+
+# List
+gh issue list
+gh issue list --assignee @me
+gh issue list --label "bug"
+gh issue list --state closed
+
+# View
+gh issue view 123
+gh issue view 123 --web
+
+# Update
+gh issue close 123
+gh issue reopen 123
+gh issue edit 123 --add-label "priority"
+gh issue comment 123 --body "Working on this"
+
+# Link to PR
+gh pr create --title "Fix #123"          # auto-links to issue
+```
+
+---
+
+## Repository
+
+```bash
+# Clone
+gh repo clone owner/repo
+gh repo clone owner/repo -- --depth 1   # shallow clone
+
+# Create
+gh repo create my-project --public
+gh repo create my-project --private --clone   # create + clone locally
+gh repo create --source . --push         # from existing local repo
+
+# View
+gh repo view                             # current repo info
+gh repo view owner/repo --web            # open in browser
+
+# Fork
+gh repo fork owner/repo                  # fork to your account
+gh repo fork owner/repo --clone          # fork + clone
+
+# Settings
+gh repo edit --default-branch main
+gh repo edit --enable-issues=false
+```
+
+---
+
+## GitHub Actions / Workflows
+
+```bash
+# List workflows
+gh workflow list
+
+# View runs
+gh run list
+gh run list --workflow=ci.yml
+gh run view 12345                        # specific run
+gh run view 12345 --log                  # full logs
+gh run view 12345 --log-failed           # only failed step logs
+
+# Trigger workflow
+gh workflow run ci.yml
+gh workflow run deploy.yml --ref main -f environment=production
+
+# Watch a run in real-time
+gh run watch
+
+# Re-run failed
+gh run rerun 12345
+gh run rerun 12345 --failed              # only failed jobs
+
+# Download artifacts
+gh run download 12345
+gh run download 12345 -n artifact-name
+```
+
+---
+
+## Releases
+
+```bash
+# Create
+gh release create v1.0.0                 # interactive
+gh release create v1.0.0 --title "v1.0.0" --notes "Release notes"
+gh release create v1.0.0 ./dist/*.tar.gz # attach files
+gh release create v1.0.0 --generate-notes  # auto-generate from commits
+gh release create v1.0.0 --draft
+
+# List & View
+gh release list
+gh release view v1.0.0
+
+# Download
+gh release download v1.0.0
+gh release download v1.0.0 -p "*.tar.gz"   # pattern match
+
+# Delete
+gh release delete v1.0.0
+```
+
+---
+
+## Gists
+
+```bash
+gh gist create file.txt                  # public gist
+gh gist create --public file.txt
+gh gist create -d "description" file1.txt file2.txt
+gh gist list
+gh gist view <id>
+gh gist edit <id>
+```
+
+---
+
+## Search (across GitHub)
+
+```bash
+gh search repos "language:go stars:>1000"
+gh search issues "is:open label:bug repo:owner/repo"
+gh search prs "is:open review-requested:@me"
+gh search code "fmt.Println language:go"
+```
+
+---
+
+## API (raw GitHub API access)
+
+```bash
+# GET
+gh api repos/owner/repo
+gh api user
+
+# POST
+gh api repos/owner/repo/issues -f title="Bug" -f body="Details"
+
+# With jq processing
+gh api repos/owner/repo/pulls --jq '.[].title'
+
+# Pagination
+gh api repos/owner/repo/issues --paginate --jq '.[].title'
+
+# GraphQL
+gh api graphql -f query='{ viewer { login } }'
+```
+
+---
+
+## Aliases (custom commands)
+
+```bash
+# Set alias
+gh alias set co 'pr checkout'
+gh alias set pv 'pr view --web'
+gh alias set mypr 'pr list --author @me'
+
+# Use
+gh co 42                                 # = gh pr checkout 42
+gh pv                                    # = gh pr view --web
+gh mypr
+
+# List aliases
+gh alias list
+```
+
+---
+
+## Configuration
+
+```bash
+# Set editor
+gh config set editor vim
+
+# Set default protocol
+gh config set git_protocol ssh
+
+# Set browser
+gh config set browser "firefox"
+
+# Prompt preferences
+gh config set prompt disabled
+```
+
+---
+
+## Common Workflows
+
+```bash
+# Full PR workflow
+git checkout -b feature/thing
+# ... make changes ...
+git add . && git commit -m "feat: thing"
+git push -u origin feature/thing
+gh pr create --fill --reviewer @teammate
+
+# Review someone's PR
+gh pr list
+gh pr checkout 42
+# ... review code locally ...
+gh pr review 42 --approve
+gh pr merge 42 --squash --delete-branch
+
+# Quick issue → PR flow
+gh issue create --title "Fix bug" --assignee @me
+git checkout -b fix/bug
+# ... fix ...
+gh pr create --title "Fix #<issue-number>"
+```

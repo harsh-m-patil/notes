@@ -1,0 +1,304 @@
+---
+title: Vim — Modal Text Editor
+description: Essential navigation, editing, and configuration for Vim/Neovim.
+---
+
+## Modes
+
+| Mode | Enter with | Purpose |
+|------|-----------|---------|
+| **Normal** | `Esc` | Navigate, delete, copy, commands |
+| **Insert** | `i`, `a`, `o` | Type text |
+| **Visual** | `v`, `V`, `Ctrl+v` | Select text |
+| **Command** | `:` | Execute commands |
+
+The key insight: you spend most time **navigating and editing**, not typing. Normal mode is home.
+
+---
+
+## Getting In and Out
+
+```bash
+vim file.txt                             # open file
+vim +42 file.txt                         # open at line 42
+vim +/pattern file.txt                   # open at first match
+```
+
+```
+:w                                       # save
+:q                                       # quit
+:wq                                      # save and quit
+:q!                                      # quit without saving
+:x                                       # save and quit (only writes if changed)
+ZZ                                       # same as :x (from Normal mode)
+ZQ                                       # quit without saving (Normal mode)
+```
+
+---
+
+## Navigation (Normal Mode)
+
+### Basic Movement
+
+| Key | Movement |
+|-----|----------|
+| `h` `j` `k` `l` | left, down, up, right |
+| `w` | Next word start |
+| `b` | Previous word start |
+| `e` | End of word |
+| `W` `B` `E` | Same but WORD (whitespace-delimited) |
+| `0` | Beginning of line |
+| `^` | First non-blank character |
+| `$` | End of line |
+| `gg` | Top of file |
+| `G` | Bottom of file |
+| `42G` or `:42` | Go to line 42 |
+| `%` | Jump to matching bracket |
+
+### Screen Movement
+
+| Key | Movement |
+|-----|----------|
+| `Ctrl+d` | Half page down |
+| `Ctrl+u` | Half page up |
+| `Ctrl+f` | Full page down |
+| `Ctrl+b` | Full page up |
+| `H` | Top of screen |
+| `M` | Middle of screen |
+| `L` | Bottom of screen |
+| `zz` | Center cursor on screen |
+
+### Search
+
+```
+/pattern                                 # search forward
+?pattern                                 # search backward
+n                                        # next match
+N                                        # previous match
+*                                        # search word under cursor (forward)
+#                                        # search word under cursor (backward)
+```
+
+---
+
+## Entering Insert Mode
+
+| Key | Where cursor goes |
+|-----|------------------|
+| `i` | Before cursor |
+| `a` | After cursor |
+| `I` | Beginning of line |
+| `A` | End of line |
+| `o` | New line below |
+| `O` | New line above |
+| `s` | Delete char and insert |
+| `S` | Delete line and insert |
+
+---
+
+## Editing (Normal Mode)
+
+### The Verb-Noun Grammar
+
+Commands follow: **operator + motion/text-object**
+
+| Operator | Action |
+|----------|--------|
+| `d` | Delete |
+| `c` | Change (delete + enter insert) |
+| `y` | Yank (copy) |
+| `>` | Indent |
+| `<` | Unindent |
+
+| Example | Meaning |
+|---------|---------|
+| `dw` | Delete word |
+| `d$` or `D` | Delete to end of line |
+| `dd` | Delete entire line |
+| `cw` | Change word |
+| `ci"` | Change inside quotes |
+| `ciw` | Change inner word |
+| `yy` | Yank (copy) line |
+| `y3j` | Yank 3 lines down |
+| `>}` | Indent paragraph |
+| `3dd` | Delete 3 lines |
+
+### Text Objects (the power of Vim)
+
+Used with operators: `i` = inner, `a` = around (includes delimiters)
+
+| Object | Meaning |
+|--------|---------|
+| `iw` / `aw` | word |
+| `is` / `as` | sentence |
+| `ip` / `ap` | paragraph |
+| `i"` / `a"` | inside/around double quotes |
+| `i'` / `a'` | inside/around single quotes |
+| `i)` / `a)` | inside/around parentheses |
+| `i]` / `a]` | inside/around brackets |
+| `i}` / `a}` | inside/around braces |
+| `it` / `at` | inside/around HTML tag |
+
+```
+ci(                                      # change everything inside ()
+da"                                      # delete including the quotes
+yi{                                      # yank inside braces
+vat                                      # visually select HTML tag + content
+```
+
+### Other Edits
+
+| Key | Action |
+|-----|--------|
+| `x` | Delete character |
+| `r<char>` | Replace single character |
+| `~` | Toggle case |
+| `J` | Join line below to current |
+| `u` | Undo |
+| `Ctrl+r` | Redo |
+| `.` | Repeat last change |
+| `p` | Paste after cursor |
+| `P` | Paste before cursor |
+
+---
+
+## Visual Mode
+
+| Key | Mode |
+|-----|------|
+| `v` | Character-wise selection |
+| `V` | Line-wise selection |
+| `Ctrl+v` | Block (column) selection |
+
+After selecting, use operators: `d`, `c`, `y`, `>`, `<`, `~`
+
+Block select is powerful:
+1. `Ctrl+v` → select column
+2. `I` → type text → `Esc` → text appears on all lines
+
+---
+
+## Search & Replace
+
+```
+:s/old/new/                              # first occurrence on current line
+:s/old/new/g                             # all on current line
+:%s/old/new/g                            # all in file
+:%s/old/new/gc                           # all in file with confirmation
+:5,20s/old/new/g                         # lines 5-20
+:'<,'>s/old/new/g                        # visual selection
+```
+
+---
+
+## Registers
+
+Vim has multiple clipboards (registers):
+
+```
+"ayy                                     # yank line into register a
+"ap                                      # paste from register a
+"+y                                      # yank to system clipboard
+"+p                                      # paste from system clipboard
+:reg                                     # view all registers
+```
+
+| Register | Content |
+|----------|---------|
+| `""` | Last delete/yank (default) |
+| `"0` | Last yank specifically |
+| `"1`-`"9` | Delete history |
+| `"+` | System clipboard |
+| `"*` | Selection clipboard (X11) |
+| `"_` | Black hole (delete without saving) |
+
+---
+
+## Macros
+
+Record a sequence and replay it:
+
+```
+qa                                       # start recording into register a
+... do edits ...
+q                                        # stop recording
+@a                                       # replay macro a
+10@a                                     # replay 10 times
+@@                                       # replay last macro
+```
+
+---
+
+## Buffers, Windows, Tabs
+
+```
+:e file.txt                              # open file in buffer
+:bn / :bp                                # next/previous buffer
+:bd                                      # close buffer
+:ls                                      # list buffers
+
+:split file.txt                          # horizontal split
+:vsplit file.txt                         # vertical split
+Ctrl+w h/j/k/l                           # move between splits
+Ctrl+w =                                 # equalize split sizes
+Ctrl+w _                                 # maximize current split
+
+:tabnew file.txt                         # new tab
+gt / gT                                  # next/prev tab
+```
+
+---
+
+## Useful Commands
+
+```
+:set number                              # show line numbers
+:set relativenumber                      # relative line numbers
+:set paste                               # paste mode (no auto-indent)
+:noh                                     # clear search highlight
+:!command                                # run shell command
+:r !date                                 # insert command output
+:sort                                    # sort selected lines
+:earlier 5m                              # undo to 5 minutes ago
+:later 5m                                # redo to 5 minutes later
+```
+
+---
+
+## Minimal `.vimrc`
+
+```vim
+set nocompatible
+syntax on
+filetype plugin indent on
+
+set number relativenumber
+set tabstop=4 shiftwidth=4 expandtab
+set smartindent autoindent
+set ignorecase smartcase
+set incsearch hlsearch
+set scrolloff=8
+set clipboard=unnamedplus
+set mouse=a
+set undofile
+
+" Leader key
+let mapleader = " "
+
+" Quick save/quit
+nnoremap <leader>w :w<CR>
+nnoremap <leader>q :q<CR>
+
+" Clear search highlight
+nnoremap <leader>h :noh<CR>
+
+" Better split navigation
+nnoremap <C-h> <C-w>h
+nnoremap <C-j> <C-w>j
+nnoremap <C-k> <C-w>k
+nnoremap <C-l> <C-w>l
+
+" Move lines up/down
+vnoremap J :m '>+1<CR>gv=gv
+vnoremap K :m '<-2<CR>gv=gv
+```
